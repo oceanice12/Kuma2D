@@ -1,0 +1,56 @@
+#include <Game.h>
+
+
+constexpr int CAM_SPEED{100};
+constexpr Vector2<float> ZOOM_FACTOR{10,10};
+
+Entity player;
+Entity camera;
+
+void Game::Start()
+{
+	camera = CreateEntity(ComponentFlag::TRANSFORM);
+	player = CreateEntity(ComponentFlag::TRANSFORM | ComponentFlag::SPRITE | ComponentFlag::RIGIDBODY);
+	GetComponent<Transform>(player) = {{0,0},{100,100}};
+	GetComponent<Sprite>(player).texture = GetTexture("res\\ball.png");
+	GetComponent<Rigidbody>(player).friction = 10;
+}
+
+void Game::Update()
+{
+	Camera(camera);
+
+	if (input.GetKey(SDL_SCANCODE_UP))
+		GetComponent<Transform>(camera).pos.y += CAM_SPEED * DeltaTime() / GetComponent<Transform>(camera).scale.y;
+	if (input.GetKey(SDL_SCANCODE_DOWN))
+		GetComponent<Transform>(camera).pos.y -= CAM_SPEED * DeltaTime() / GetComponent<Transform>(camera).scale.y;
+	if (input.GetKey(SDL_SCANCODE_LEFT))
+		GetComponent<Transform>(camera).pos.x -= CAM_SPEED * DeltaTime() / GetComponent<Transform>(camera).scale.x;
+	if (input.GetKey(SDL_SCANCODE_RIGHT))
+		GetComponent<Transform>(camera).pos.x += CAM_SPEED * DeltaTime() / GetComponent<Transform>(camera).scale.x;
+
+	if (input.GetKey(SDL_SCANCODE_P))
+		GetComponent<Transform>(camera).scale += ZOOM_FACTOR * DeltaTime() * GetComponent<Transform>(camera).scale;
+	if (input.GetKey(SDL_SCANCODE_L))
+		GetComponent<Transform>(camera).scale -= ZOOM_FACTOR * DeltaTime() * GetComponent<Transform>(camera).scale;
+	if (input.GetKey(SDL_SCANCODE_R))
+		GetComponent<Transform>(camera).scale = {1,1};
+
+	if (input.GetKey(SDL_SCANCODE_W))
+		GetComponent<Rigidbody>(player).AddForce({0,100});
+	if (input.GetKey(SDL_SCANCODE_S))
+		GetComponent<Rigidbody>(player).AddForce({0,-100});
+	if (input.GetKey(SDL_SCANCODE_A))
+		GetComponent<Rigidbody>(player).AddForce({-100,0});
+	if (input.GetKey(SDL_SCANCODE_D))
+		GetComponent<Rigidbody>(player).AddForce({100,0});
+
+
+	if (input.GetMouseButtonDown(LeftMouse))
+	{
+		Entity e = CreateEntity(ComponentFlag::TRANSFORM | ComponentFlag::SPRITE | ComponentFlag::BOX_COLLIDER);
+		GetComponent<Transform>(e) = {{ScreenToWorldPos(input.GetMousePos())}, {10,10}};
+		GetComponent<Sprite>(e).texture = GetTexture("res\\box.png");
+		GetComponent<BoxCollider>(e).scale = {10,10};
+	}
+}

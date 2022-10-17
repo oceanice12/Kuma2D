@@ -1,0 +1,92 @@
+#include "Game.h"
+
+
+#define tf(e) (GetComponent<Transform>(e))
+#define rb(e) (GetComponent<Rigidbody>(e))
+#define sp(e) (GetComponent<Sprite>(e))
+
+Entity p1, p2;
+Entity camera;
+
+constexpr Vector2<float> ZOOM_FACTOR{10,10};
+
+void Game::Start()
+{
+	p1 = CreateEntity(ComponentFlag::TRANSFORM | ComponentFlag::SPRITE | ComponentFlag::RIGIDBODY);
+	sp(p1).texture = GetTexture("res\\ball.png");
+	tf(p1).pos = {0, 0};
+	tf(p1).scale = {300, 300};
+	rb(p1).friction = 10;
+
+	camera = CreateEntity(ComponentFlag::TRANSFORM);
+	tf(camera) = {tf(p1).pos,{1,1}};
+	Camera(camera);
+	
+	p2 = CreateEntity(ComponentFlag::TRANSFORM | ComponentFlag::SPRITE | ComponentFlag::RIGIDBODY);
+	sp(p2).texture = GetTexture("res\\ball.png");
+	BoundingBox box = tf(p1);
+	tf(p2) = {tf(p1).pos,{100,100}};
+}
+
+
+void Game::Update()
+{
+	if (input.GetKeyDown(SDL_SCANCODE_C))
+	{
+		Entity temp = p2;
+		p2 = p1;
+		p1 = temp;
+	}
+
+	if (input.GetKey(SDL_SCANCODE_UP))
+		tf(camera).pos.y += CAM_SPEED * DeltaTime() / tf(camera).scale.y;
+	if (input.GetKey(SDL_SCANCODE_DOWN))
+		tf(camera).pos.y -= CAM_SPEED * DeltaTime() / tf(camera).scale.y;
+	if (input.GetKey(SDL_SCANCODE_LEFT))
+		tf(camera).pos.x -= CAM_SPEED * DeltaTime() / tf(camera).scale.x;
+	if (input.GetKey(SDL_SCANCODE_RIGHT))
+		tf(camera).pos.x += CAM_SPEED * DeltaTime() / tf(camera).scale.x;
+
+	if (input.GetKey(SDL_SCANCODE_P))
+		tf(camera).scale += ZOOM_FACTOR * DeltaTime() * tf(camera).scale;
+	if (input.GetKey(SDL_SCANCODE_L))
+		tf(camera).scale -= ZOOM_FACTOR * DeltaTime() * tf(camera).scale;
+	if (input.GetKey(SDL_SCANCODE_R))
+		tf(camera).scale = {1,1};
+
+
+	tf(camera).pos = tf(p1).pos;
+	Camera(camera);
+
+	int force = 200;
+	float speed = Magnitude(rb(p1).vel);
+
+
+
+	if (speed > force)
+		rb(p1).friction = force;
+	else if (speed > force * 0.75f)
+		rb(p1).friction = force * 0.5f;
+	else if (speed < force * 0.25f)
+		rb(p1).friction = force * 0.75f;
+
+	if (input.GetKey(SDL_SCANCODE_W))
+		rb(p1).acc.y += (force / rb(p1).mass);
+	if (input.GetKey(SDL_SCANCODE_S))
+		rb(p1).acc.y -= (force / rb(p1).mass);
+	if (input.GetKey(SDL_SCANCODE_A))
+		rb(p1).acc.x -= (force / rb(p1).mass);
+	if (input.GetKey(SDL_SCANCODE_D))
+		rb(p1).acc.x += (force / rb(p1).mass);
+
+	/*
+	if (input.GetKey(SDL_SCANCODE_W))
+		tf(camera).pos.y += force * DeltaTime();
+	if (input.GetKey(SDL_SCANCODE_S))
+		tf(camera).pos.y -= force * DeltaTime();
+	if (input.GetKey(SDL_SCANCODE_A))
+		tf(camera).pos.x -= force * DeltaTime();
+	if (input.GetKey(SDL_SCANCODE_D))
+		tf(camera).pos.x += force * DeltaTime();
+	*/
+}

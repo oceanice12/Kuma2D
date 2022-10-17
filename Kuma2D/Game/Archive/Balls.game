@@ -1,0 +1,104 @@
+#include <Game.h>
+
+constexpr int COUNT{10};
+constexpr int MAX_SPEED{1000};
+constexpr int MAX_MASS{10};
+
+
+void Game::Start()
+{
+
+	for (int i = 0; i < COUNT; i++)
+	{
+		float r1 = (float)RangeRNG(-windowSize.x / 2, windowSize.x / 2);
+		float r2 = (float)RangeRNG(-windowSize.y / 2, windowSize.y / 2);
+		float r3 = (float)RangeRNG(-MAX_SPEED, MAX_SPEED);
+		float r4 = (float)RangeRNG(-MAX_SPEED, MAX_SPEED);
+		float r5 = (float)RangeRNG(2, MAX_MASS);
+		Entity e = CreateEntity(ComponentFlag::TRANSFORM | ComponentFlag::SPRITE | ComponentFlag::RIGIDBODY | ComponentFlag::CIRCLE_COLLIDER);
+		Transform& tf = GetComponent<Transform>(e);
+		Rigidbody& rb = GetComponent<Rigidbody>(e);
+		GetComponent<Sprite>(e).texture = GetTexture("res\\sprites\\ball.png");
+		tf.pos = {r1, r2};
+		tf.scale = {r5 * 10, r5 * 10};
+		//GetComponent<BoxCollider>(e).scale = tf.scale;
+		GetComponent<CircleCollider>(e).radius = tf.scale.x / 2;
+		rb.vel = {r3, r4};
+		rb.mass = r5;
+		rb.drag = {0.01,0.001};
+	}
+}
+
+Entity selectedEntity;
+bool selected = false;
+
+void Game::Update()
+{
+	Vector2<float> mouseWorldPos = ScreenToWorldPos(input.GetMousePos());
+
+	if (input.GetMouseButtonDown(LeftMouse))
+	{
+		for (auto& entity : GetEntities())
+		{
+			if ((Magnitude((GetComponent<Transform>(entity).pos - mouseWorldPos)) <= GetComponent<Transform>(entity).scale.x / 2))
+			{
+				selected = true;
+				selectedEntity = entity;
+				break;
+			}
+		}
+
+		if (!selected)
+			SpawnBall();
+	}
+
+	if (input.GetKeyDown(SDL_SCANCODE_SPACE))
+	{
+		std::vector<Entity> copy = GetEntities();
+		for (auto& entity : copy)
+		{
+			DeleteEntity(entity);
+		}
+	}
+
+
+	if (input.GetMouseButtonDown(RightMouse))
+	{
+		for (auto& entity : GetEntities())
+		{
+			if ((Magnitude((GetComponent<Transform>(entity).pos - mouseWorldPos)) <= GetComponent<Transform>(entity).scale.x / 2))
+			{
+				DeleteEntity(entity);
+				break;
+			}
+		}
+	}
+
+	if (selected && input.GetMouseButtonUp(LeftMouse))
+	{
+		Rigidbody& rb = GetComponent<Rigidbody>(selectedEntity);
+		rb.vel += 10 * (GetComponent<Transform>(selectedEntity).pos - mouseWorldPos) / rb.mass;
+		selected = false;
+	}
+}
+
+
+void Game::SpawnBall()
+{
+	float r5 = (float)RangeRNG(10, 12);
+	Entity e = CreateEntity(ComponentFlag::TRANSFORM | ComponentFlag::SPRITE | ComponentFlag::CIRCLE_COLLIDER);
+	Transform& tf = GetComponent<Transform>(e);
+	GetComponent<Sprite>(e).texture = GetTexture("res\\sprites\\ball.png");
+	tf.pos = ScreenToWorldPos(input.GetMousePos());
+	tf.scale = {r5 * 10, r5 * 10};
+	//GetComponent<BoxCollider>(e).scale = tf.scale;
+	GetComponent<CircleCollider>(e).radius = tf.scale.x / 2;
+	/*
+	Rigidbody& rb = GetComponent<Rigidbody>(e);
+	rb.vel = {0, 0};
+	rb.mass = r5;
+	rb.friction = 5;
+	*/
+}
+
+

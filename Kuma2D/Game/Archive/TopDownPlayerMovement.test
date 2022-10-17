@@ -1,0 +1,44 @@
+#include "Game.h"
+
+
+void Game::Start()
+{
+	Entity e = CreateEntity(ComponentFlag::TRANSFORM | ComponentFlag::SPRITE | ComponentFlag::RIGIDBODY | ComponentFlag::COLLIDER);
+	Transform& tf = GetComponent<Transform>(e);
+	Rigidbody& rb = GetComponent<Rigidbody>(e);
+	tf.pos = {windowSize.x / 2, windowSize.y / 2};
+	tf.scale = {25, 25};
+	rb.friction = 10;
+	rb.mass = 1;
+	GetComponent<Sprite>(e).texture = GetTexture("res\\ball.png");
+	GetComponent<CircleCollider>(e).radius = tf.scale.x / 2;
+	SetEntityName(e, "Player");
+}
+
+
+void Game::Update()
+{
+	Rigidbody& rb = GetComponent<Rigidbody>("Player");
+	int force = 200;
+	float speed = Magnitude(rb.vel);
+
+
+
+	if (speed > force)
+		rb.friction = force;
+	else if (speed > force * 0.75f)
+		rb.friction = force * 0.5f;
+	else if (speed < force * 0.25f)
+		rb.friction = force * 0.75f;
+
+	std::cout << Magnitude(rb.vel) << std::endl;
+
+	if (input.GetKey(SDL_SCANCODE_W))
+		rb.acc.y -= (force / rb.mass);
+	if (input.GetKey(SDL_SCANCODE_S))
+		rb.acc.y += (force / rb.mass);
+	if (input.GetKey(SDL_SCANCODE_A))
+		rb.acc.x -= (force / rb.mass);
+	if (input.GetKey(SDL_SCANCODE_D))
+		rb.acc.x += (force / rb.mass);
+}

@@ -1,0 +1,43 @@
+#include <Game.h>
+#include <Macros.h>
+
+
+const float PLAYER_MOVE_FORCE{std::powf(10,3)};
+const float PLAYER_JUMP_FORCE{std::powf(10,3)};
+
+Entity player;
+
+
+void Game::Start()
+{
+	player = CreateEntity(ComponentFlag::TRANSFORM | ComponentFlag::SPRITE | ComponentFlag::RIGIDBODY | ComponentFlag::BOX_COLLIDER);
+	tf(player) = {{200,0},{25,50}};
+	sp(player).texture = GetTexture("res\\sprites\\box.png");
+	rb(player).drag = {5,0.0001};
+	rb(player).gravity = 2000;
+	rb(player).mass = 1;
+	bc(player).scale = tf(player).scale;
+
+	Entity e = CreateEntity(ComponentFlag::TRANSFORM | ComponentFlag::SPRITE | ComponentFlag::BOX_COLLIDER);
+	tf(e) = {{0,0},{100,100}};
+	sp(e).texture = GetTexture("res\\sprites\\box.png");
+	bc(e).scale = tf(e).scale;
+}
+
+void Game::Update()
+{
+	if (input.GetKey(SDL_SCANCODE_A))
+		rb(player).AddForce({-PLAYER_MOVE_FORCE,0});
+	if (input.GetKey(SDL_SCANCODE_D))
+		rb(player).AddForce({PLAYER_MOVE_FORCE,0});
+	if (input.GetKeyDown(SDL_SCANCODE_SPACE))
+		rb(player).vel.y = PLAYER_JUMP_FORCE;
+
+	if (input.GetMouseButtonDown(LeftMouse))
+	{
+		Entity e = CreateEntity(ComponentFlag::TRANSFORM | ComponentFlag::SPRITE | ComponentFlag::BOX_COLLIDER);
+		GetComponent<Transform>(e) = {{ScreenToWorldPos(input.GetMousePos())}, {100,10}};
+		GetComponent<Sprite>(e).texture = GetTexture("res\\sprites\\box.png");
+		GetComponent<BoxCollider>(e).scale = tf(e).scale;
+	}
+}#pragma once
