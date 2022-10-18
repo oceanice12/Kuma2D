@@ -1,7 +1,30 @@
 #include <PhysicsSystem.h>
 
 
-void PhysicsSystem::Update(	ComponentArray<Transform>& transforms, ComponentArray<Rigidbody>& rigidbodies, 
+namespace SystemManager
+{
+	namespace Physics
+	{
+		std::unordered_multimap<Entity, Entity> collisions;
+		std::vector<Entity> colEntities;
+		std::unordered_map<Entity, Index> colEntityToIndex;
+		std::vector<Entity> rbEntities;
+		std::unordered_map<Entity, Index> rbEntityToIndex;
+
+		Signature systemRbSignature = static_cast<Signature>(ComponentFlag::TRANSFORM | ComponentFlag::RIGIDBODY);
+		std::vector<Signature> systemColSignatures =
+		{
+			static_cast<Signature>(ComponentFlag::TRANSFORM | ComponentFlag::BOX_COLLIDER),
+			static_cast<Signature>(ComponentFlag::TRANSFORM | ComponentFlag::CIRCLE_COLLIDER),
+			static_cast<Signature>(ComponentFlag::TRANSFORM | ComponentFlag::BOX_TRIGGER),
+			static_cast<Signature>(ComponentFlag::TRANSFORM | ComponentFlag::CIRCLE_TRIGGER)
+		};
+	}
+}
+
+
+
+void SystemManager::Physics::Update(	ComponentArray<Transform>& transforms, ComponentArray<Rigidbody>& rigidbodies, 
 							ComponentArray<CircleCollider>& cColliders, ComponentArray<BoxCollider>& bColliders,
 							ComponentArray<CircleTrigger>& cTriggers, ComponentArray<BoxTrigger>& bTriggers, 
 							double dt)

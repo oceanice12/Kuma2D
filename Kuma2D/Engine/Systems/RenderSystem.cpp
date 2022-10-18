@@ -1,6 +1,35 @@
 #include <RenderSystem.h>
 
-RenderSystem::RenderSystem()
+Transform SystemManager::Render::camera;
+std::vector<Entity> SystemManager::Render::entities;
+std::unordered_map<Entity, Index> SystemManager::Render::entityToIndex;
+
+std::vector<Signature> SystemManager::Render::systemSignatures =
+{
+	static_cast<Signature>(ComponentFlag::TRANSFORM | ComponentFlag::SPRITE),
+	static_cast<Signature>(ComponentFlag::TRANSFORM | ComponentFlag::TEXT)
+};
+
+
+namespace SystemManager
+{
+	namespace Render
+	{
+		SDL_Renderer* renderer;
+		SDL_Window* window;
+		std::unordered_map<std::string, Sprite> sprites;
+		std::unordered_map<std::string, TTF_Font*> fonts;
+
+		Sprite LoadSprite(const char* path);
+		void LoadSprites(const char* path);
+
+		TTF_Font* LoadFont(const char* path);
+		void LoadFonts(const char* path);
+	}
+}
+
+
+void SystemManager::Render::Init()
 {
 	int flags = FULLSCREEN ? SDL_WINDOW_FULLSCREEN_DESKTOP : NULL;
 	window = SDL_CreateWindow(WINDOW_NAME, SDL_WINDOWPOS_CENTERED, SDL_WINDOWPOS_CENTERED, WINDOW_SIZE.x, WINDOW_SIZE.y, flags);
@@ -25,7 +54,7 @@ RenderSystem::RenderSystem()
 }
 
 
-void RenderSystem::Update(ComponentArray<Transform>& transforms, ComponentArray<Sprite>& sprites, ComponentArray<Text>& texts)
+void SystemManager::Render::Update(ComponentArray<Transform>& transforms, ComponentArray<Sprite>& sprites, ComponentArray<Text>& texts)
 {
 	if (SDL_RenderClear(renderer) < 0)
 		std::cout << "WARNING! Failed to clear renderer. " << SDL_GetError() << std::endl;
@@ -92,13 +121,13 @@ void RenderSystem::Update(ComponentArray<Transform>& transforms, ComponentArray<
 }
 
 
-void RenderSystem::LoadSprites(const char* path)
+void SystemManager::Render::LoadSprites(const char* path)
 {
 	for (const auto& file : std::filesystem::directory_iterator(path))
 		sprites[file.path().string()] = (LoadSprite(file.path().string().c_str()));
 }
 
-Sprite RenderSystem::LoadSprite(const char* path)
+Sprite SystemManager::Render::LoadSprite(const char* path)
 {
 	SDL_Texture* texture = IMG_LoadTexture(renderer, path);
 	if (texture == nullptr)
@@ -116,12 +145,12 @@ Sprite RenderSystem::LoadSprite(const char* path)
 }
 
 
-void RenderSystem::LoadFonts(const char* path)
+void SystemManager::Render::LoadFonts(const char* path)
 {
 	for (const auto& file : std::filesystem::directory_iterator(path))
 		fonts[file.path().string()] = (LoadFont(file.path().string().c_str()));
 }
-TTF_Font* RenderSystem::LoadFont(const char* path)
+TTF_Font* SystemManager::Render::LoadFont(const char* path)
 {
 	TTF_Font* font = TTF_OpenFont(path, 100);
 	if (font == nullptr)
@@ -130,7 +159,7 @@ TTF_Font* RenderSystem::LoadFont(const char* path)
 	return font;
 }
 
-void RenderSystem::FullScreen()
+void SystemManager::Render::FullScreen()
 {
 	FULLSCREEN = !FULLSCREEN;
 	int flags = FULLSCREEN ? SDL_WINDOW_FULLSCREEN_DESKTOP : NULL;
@@ -141,7 +170,7 @@ void RenderSystem::FullScreen()
 	SDL_RenderSetLogicalSize(renderer, WINDOW_SIZE.x, WINDOW_SIZE.y);
 	SDL_SetWindowPosition(window, SDL_WINDOWPOS_CENTERED, SDL_WINDOWPOS_CENTERED);
 }
-void RenderSystem::SetResolution(Vector2<int> resolution)
+void SystemManager::Render::SetResolution(Vector2<int> resolution)
 {
 	WINDOW_SIZE = resolution;
 	SDL_SetWindowSize(window, resolution.x, resolution.y);
@@ -149,3 +178,7 @@ void RenderSystem::SetResolution(Vector2<int> resolution)
 	SDL_RenderSetLogicalSize(renderer, resolution.x, resolution.y);
 	SDL_SetWindowPosition(window, SDL_WINDOWPOS_CENTERED, SDL_WINDOWPOS_CENTERED);
 }
+
+
+TTF_Font* SystemManager::Render::GetFont(std::string path) { return fonts[path]; }
+const Sprite& SystemManager::Render::GetSprite(std::string path) { return sprites[path]; }

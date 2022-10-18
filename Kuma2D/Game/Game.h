@@ -1,27 +1,14 @@
 #pragma once
-#include <ECS.h>
+#include <Kuma2D.h>
 
 
-class Game : public ECS
+
+namespace Game
 {
-public:
-	void Start() override;
-	void Update() override;
-
+	using namespace Kuma2D;
+	void Kuma2D::Start();
+	void Kuma2D::Update();
 
 	void Reset();
-
-	// Balls
-	void SpawnBall();
-
-
-	// Space invaders
-	void Player();
-	void Aliens();
-	void Bullets();
-	void GameStateCheck();
-
-	// Tower fall
-	void SpawnObstacle();
-	void SpawnPowerup();
-};
+	void SpawnEnemy();
+}

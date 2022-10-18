@@ -1,8 +1,9 @@
+#pragma once
 #include <ComponentManager.h>
 
+std::unordered_map<const char*, std::shared_ptr<IComponentArray>> ComponentManager::componentArrays;
 
-
-ComponentManager::ComponentManager()
+void ComponentManager::Init()
 {
 	componentArrays[typeid(Transform).name()] = std::make_shared<ComponentArray<Transform>>();
 	componentArrays[typeid(Sprite).name()] = std::make_shared<ComponentArray<Sprite>>();

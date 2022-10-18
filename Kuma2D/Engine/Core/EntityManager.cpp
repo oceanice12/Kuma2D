@@ -1,7 +1,16 @@
 #include <EntityManager.h>
 
+namespace EntityManager
+{
+	std::vector<Entity> entities;
+	std::queue<Entity> idQueue;
+	std::vector<Signature> signatures;
+	std::unordered_map<Entity, Index> entityToIndex;
+	std::unordered_map<Entity, Type> entityToType;
+	std::unordered_map<Type, EntityArray> typeToArray;
+}
 
-EntityManager::EntityManager()
+void EntityManager::Init()
 {
 	for (int i = 1; i < MAX_ENTITIES - 1; i++)
 		idQueue.push(i);
@@ -74,12 +83,12 @@ void EntityManager::SetType(Type type, Entity entity)
 	typeToArray[type].AddEntity(entity);
 }
 
-const std::vector<Entity>& EntityManager::GetArray(Type type)
+const std::vector<Entity>* EntityManager::GetArray(Type type)
 {
 	if (typeToArray.find(type) != typeToArray.end())
-		return typeToArray[type].GetEntities();
+		return &typeToArray[type].GetEntities();
 
-	return nullArray;
+	return nullptr;
 }
 
 Type EntityManager::GetType(Entity entity)
@@ -89,3 +98,7 @@ Type EntityManager::GetType(Entity entity)
 
 	return "";
 }
+
+const Signature EntityManager::GetSignature(Entity entity) { return signatures[entityToIndex[entity]]; }
+void EntityManager::SetSignature(Entity entity, Signature signature) { signatures[entityToIndex[entity]] = signature; }
+const std::vector<Entity>* EntityManager::GetEntities() { return &entities; }

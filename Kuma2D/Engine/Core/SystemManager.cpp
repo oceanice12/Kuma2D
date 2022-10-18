@@ -1,38 +1,50 @@
 #include <SystemManager.h>
 
-void SystemManager::Update(ComponentManager& cm)
+namespace SystemManager
+{
+	void UpdateEntityArray(std::vector<Entity>& entities, std::unordered_map<Entity, Index>& entityToIndex,
+		Signature systemSignature, Entity entity, Signature signature);
+}
+
+void SystemManager::Init()
+{
+	Render::Init();
+	Audio::Init();
+}
+
+void SystemManager::Update()
 {
 	Time::Tick();
 
-	physicsSystem.Update(	cm.GetArray<Transform>(), 
-							cm.GetArray<Rigidbody>(), 
-							cm.GetArray<CircleCollider>(), 
-							cm.GetArray<BoxCollider>(), 
-							cm.GetArray<CircleTrigger>(), 
-							cm.GetArray<BoxTrigger>(),
+	Physics::Update(		ComponentManager::GetArray<Transform>(), 
+							ComponentManager::GetArray<Rigidbody>(), 
+							ComponentManager::GetArray<CircleCollider>(), 
+							ComponentManager::GetArray<BoxCollider>(), 
+							ComponentManager::GetArray<CircleTrigger>(), 
+							ComponentManager::GetArray<BoxTrigger>(),
 							Time::dt);
 
 
-	renderSystem.Update(	cm.GetArray<Transform>(), 
-							cm.GetArray<Sprite>(), 
-							cm.GetArray<Text>());
+	Render::Update(			ComponentManager::GetArray<Transform>(), 
+							ComponentManager::GetArray<Sprite>(), 
+							ComponentManager::GetArray<Text>());
 }
 
 
 void SystemManager::UpdateEntityArrays(Entity entity, Signature signature)
 {
-	for (Signature s : renderSystem.systemSignatures)
+	for (Signature s : Render::systemSignatures)
 	{
-		UpdateEntityArray(renderSystem.entities, renderSystem.entityToIndex, s, entity, signature);
+		UpdateEntityArray(Render::entities, Render::entityToIndex, s, entity, signature);
 		if ((signature & s) == s)
 			break;
 	}
 
-	UpdateEntityArray(physicsSystem.rbEntities, physicsSystem.rbEntityToIndex, physicsSystem.systemRbSignature, entity, signature);
+	UpdateEntityArray(Physics::rbEntities, Physics::rbEntityToIndex, Physics::systemRbSignature, entity, signature);
 
-	for (Signature s : physicsSystem.systemColSignatures)
+	for (Signature s : Physics::systemColSignatures)
 	{
-		UpdateEntityArray(physicsSystem.colEntities, physicsSystem.colEntityToIndex, s, entity, signature);
+		UpdateEntityArray(Physics::colEntities, Physics::colEntityToIndex, s, entity, signature);
 		if ((signature & s) == s)
 			break;
 	}

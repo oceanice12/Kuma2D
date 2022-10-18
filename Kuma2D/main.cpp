@@ -1,6 +1,7 @@
-#include <Game.h>
 #include <iostream>
 #include <ctime>
+#include <Kuma2D.h>
+#include <Kuma2d_impl.h>
 
 
 int main(int argc, char** argv)
@@ -25,13 +26,14 @@ int main(int argc, char** argv)
 
 	srand(time(NULL));
 
-	Game game{};
-	game.Start();	// User scripted start
+	Kuma2D::Init();
+
+	Kuma2D::Start(); // User scripted start
 
 	while (Input::Update())
 	{
-		game.Update();	// User scripted update
-		game.UpdateSystems();
+		Kuma2D::Update();	// User scripted update
+		Kuma2D::UpdateSystems();
 	}
 
 

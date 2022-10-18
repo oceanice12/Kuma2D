@@ -1,6 +1,5 @@
 #pragma once
-
-
+#include <iostream>
 
 template<typename T>
 struct Vector2

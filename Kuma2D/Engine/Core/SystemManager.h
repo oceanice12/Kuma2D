@@ -1,23 +1,15 @@
 #pragma once
+#include <Clock.h>
+#include <Settings.h>
+#include <vector>
 #include <ComponentManager.h>
 #include <RenderSystem.h>
 #include <PhysicsSystem.h>
 #include <AudioSystem.h>
-#include <Clock.h>
-#include <Settings.h>
-#include <vector>
 
-class SystemManager
+namespace SystemManager
 {
-public:
-	void Update(ComponentManager& cm);
-
-	void UpdateEntityArrays(Entity entity, Signature signature);
-
-	RenderSystem renderSystem;
-	PhysicsSystem physicsSystem;
-	AudioSystem audioSystem;
-private:
-	void UpdateEntityArray(std::vector<Entity>& entities, std::unordered_map<Entity, Index>& entityToIndex, 
-							Signature systemSignature, Entity entity, Signature signature);
-};
+	extern void Init();
+	extern void Update();
+	extern void UpdateEntityArrays(Entity entity, Signature signature);
+}

@@ -1,7 +1,20 @@
 #include "AudioSystem.h"
 
+namespace SystemManager
+{
+	namespace Audio
+	{
+		std::unordered_map<std::string, Mix_Music*> songs;
+		std::unordered_map<std::string, Mix_Chunk*> sounds;
 
-AudioSystem::AudioSystem()
+		Mix_Music* LoadSong(const char* path);
+		Mix_Chunk* LoadSound(const char* path);
+		void LoadSongs(const char* path);
+		void LoadSounds(const char* path);
+	}
+}
+
+void SystemManager::Audio::Init()
 {
 	if (Mix_OpenAudio(22050, MIX_DEFAULT_FORMAT, 2, 4096) < 0)
 	{
@@ -15,7 +28,7 @@ AudioSystem::AudioSystem()
 
 
 
-void AudioSystem::PlayAudio(std::string audio, int loops)
+void SystemManager::Audio::PlayAudio(std::string audio, int loops)
 {
 	if (songs.find(audio) != songs.end())
 	{
@@ -35,7 +48,7 @@ void AudioSystem::PlayAudio(std::string audio, int loops)
 }
 
 
-Mix_Music* AudioSystem::LoadSong(const char* path)
+Mix_Music* SystemManager::Audio::LoadSong(const char* path)
 {
 	Mix_Music* music = Mix_LoadMUS(path);
 	if (music == nullptr)
@@ -44,7 +57,7 @@ Mix_Music* AudioSystem::LoadSong(const char* path)
 	return music;
 }
 
-Mix_Chunk* AudioSystem::LoadSound(const char* path)
+Mix_Chunk* SystemManager::Audio::LoadSound(const char* path)
 {
 	Mix_Chunk* sound = Mix_LoadWAV(path);
 	if (sound == nullptr)
@@ -53,13 +66,13 @@ Mix_Chunk* AudioSystem::LoadSound(const char* path)
 	return sound;
 }
 
-void AudioSystem::LoadSongs(const char* path)
+void SystemManager::Audio::LoadSongs(const char* path)
 {
 	for (const auto& file : std::filesystem::directory_iterator(path))
 		songs[file.path().string()] = (LoadSong(file.path().string().c_str()));
 }
 
-void AudioSystem::LoadSounds(const char* path)
+void SystemManager::Audio::LoadSounds(const char* path)
 {
 	for (const auto& file : std::filesystem::directory_iterator(path))
 		sounds[file.path().string()] = (LoadSound(file.path().string().c_str()));

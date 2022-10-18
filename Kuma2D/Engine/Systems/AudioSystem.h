@@ -6,20 +6,12 @@
 #include <Types.h>
 #include <filesystem>
 
-class AudioSystem
+namespace SystemManager
 {
-public:
-	AudioSystem();
+	namespace Audio
+	{
+		void Init();
 
-	void PlayAudio(std::string audio, int loops = 0);
-
-private:
-	std::unordered_map<std::string, Mix_Music*> songs;
-	std::unordered_map<std::string, Mix_Chunk*> sounds;
-
-	Mix_Music* LoadSong(const char* path);
-	Mix_Chunk* LoadSound(const char* path);
-	void LoadSongs(const char* path);
-	void LoadSounds(const char* path);
-};
-
+		void PlayAudio(std::string audio, int loops = 0);
+	}
+}

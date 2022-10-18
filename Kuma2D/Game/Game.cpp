@@ -19,7 +19,7 @@ int score = 0;
 Entity scoreHUD;
 Entity fpsHUD;
 
-void Game::Start()
+void Kuma2D::Start()
 {
 	// Background
 	{
@@ -81,7 +81,7 @@ void Game::Start()
 	// Enemies
 	{
 		for (int i = 0; i < MAX_ENEMIES; i++)
-			SpawnObstacle();
+			Game::SpawnEnemy();
 	}
 	
 	// HUD
@@ -99,7 +99,7 @@ void Game::Start()
 }
 
 
-void Game::Update()
+void Kuma2D::Update()
 {
 	if (Input::Keyboard::GetKeyDown(SDL_SCANCODE_F11))
 		FullScreen();
@@ -196,11 +196,11 @@ void Game::Update()
 
 	// Enemies
 	{
-		std::vector<Entity> enemies = Entities("Enemy");
+		std::vector<Entity> enemies = *Entities("Enemy");
 
 		if (enemies.size() < MAX_ENEMIES)
 			for (int i = enemies.size(); i < MAX_ENEMIES; i++)
-				SpawnObstacle();
+				Game::SpawnEnemy();
 
 		for (Entity e : enemies)
 		{
@@ -217,7 +217,7 @@ void Game::Update()
 
 	// HUD
 	{
-		std::vector<Entity> hud = Entities("HUD");
+		std::vector<Entity> hud = *Entities("HUD");
 		for (Entity e : hud)
 		{
 			tf(e).scale = { 64.f * txt(e).text.size(), 64 };
@@ -244,14 +244,14 @@ void Game::Reset()
 	timerSwordActive.Set(0);
 	timerSwordAttack.Set(0);
 
-	std::vector<Entity> entities = Entities();
+	std::vector<Entity> entities = *Entities();
 	for (Entity e : entities)
 		DeleteEntity(e);
 
 	Game::Start();
 }
 
-void Game::SpawnObstacle()
+void Game::SpawnEnemy()
 {
 	Entity e = CreateEntity(ComponentFlag::TRANSFORM | ComponentFlag::SPRITE | ComponentFlag::RIGIDBODY | ComponentFlag::BOX_TRIGGER);
 	tf(e).scale = { 50,50 };

@@ -12,29 +12,24 @@
 #include <Collider.h>
 #include <Settings.h>
 
-
-class PhysicsSystem
+namespace SystemManager
 {
-public:
-	void Update(ComponentArray<Transform>& transforms, ComponentArray<Rigidbody>& rigidbodies,
-				ComponentArray<CircleCollider>& cColliders, ComponentArray<BoxCollider>& bColliders,
-				ComponentArray<CircleTrigger>& cTriggers, ComponentArray<BoxTrigger>& bTriggers,
-				double dt);
-
-	std::unordered_multimap<Entity, Entity> collisions;
-
-	std::vector<Entity> colEntities;
-	std::unordered_map<Entity, Index> colEntityToIndex;
-	std::vector<Signature> systemColSignatures = 
+	namespace Physics
 	{
-		static_cast<Signature>(ComponentFlag::TRANSFORM | ComponentFlag::BOX_COLLIDER), 
-		static_cast<Signature>(ComponentFlag::TRANSFORM | ComponentFlag::CIRCLE_COLLIDER),
-		static_cast<Signature>(ComponentFlag::TRANSFORM | ComponentFlag::BOX_TRIGGER), 
-		static_cast<Signature>(ComponentFlag::TRANSFORM | ComponentFlag::CIRCLE_TRIGGER)
-	};
+		void Update(ComponentArray<Transform>& transforms, ComponentArray<Rigidbody>& rigidbodies,
+			ComponentArray<CircleCollider>& cColliders, ComponentArray<BoxCollider>& bColliders,
+			ComponentArray<CircleTrigger>& cTriggers, ComponentArray<BoxTrigger>& bTriggers,
+			double dt);
+
+		extern std::unordered_multimap<Entity, Entity> collisions;
+
+		extern std::vector<Entity> colEntities;
+		extern std::unordered_map<Entity, Index> colEntityToIndex;
+		extern std::vector<Signature> systemColSignatures;
 
 
-	std::vector<Entity> rbEntities;
-	std::unordered_map<Entity, Index> rbEntityToIndex;
-	Signature systemRbSignature = static_cast<Signature>(ComponentFlag::TRANSFORM | ComponentFlag::RIGIDBODY);
-};
+		extern std::vector<Entity> rbEntities;
+		extern std::unordered_map<Entity, Index> rbEntityToIndex;
+		extern Signature systemRbSignature;
+	}
+}
