@@ -9,7 +9,7 @@
 
 namespace SystemManager
 {
-	extern void Init();
-	extern void Update();
-	extern void UpdateEntityArrays(Entity entity, Signature signature);
+	void Init();
+	void Update();
+	void UpdateEntityArrays(Entity entity, Signature signature);
 }

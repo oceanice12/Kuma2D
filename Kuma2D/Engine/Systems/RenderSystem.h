@@ -19,12 +19,12 @@ namespace SystemManager
 {
 	namespace Render
 	{
-		extern void Init();
-		extern void Update(ComponentArray<Transform>& transforms, ComponentArray<Sprite>& sprites, ComponentArray<Text>& texts);
-		extern const Sprite& GetSprite(std::string path);
-		extern TTF_Font* GetFont(std::string path);
-		extern void FullScreen();
-		extern void SetResolution(Vector2<int> resolution);
+		void Init();
+		void Update(ComponentArray<Transform>& transforms, ComponentArray<Sprite>& sprites, ComponentArray<Text>& texts);
+		const Sprite& GetSprite(std::string path);
+		TTF_Font* GetFont(std::string path);
+		void FullScreen();
+		void SetResolution(Vector2<int> resolution);
 
 		extern Transform camera;
 		extern std::vector<Entity> entities;

@@ -1,10 +1,16 @@
 #include <PhysicsSystem.h>
 
-
 namespace SystemManager
 {
 	namespace Physics
 	{
+		void RigidbodyUpdate(std::vector<Entity> entities, ComponentArray<Transform>& transforms, ComponentArray<Rigidbody>& rigidbodies);
+
+		void ColliderUpdate(	std::vector<Entity> entities1, std::vector<Entity> entities2, 
+								ComponentArray<Transform>& transforms, ComponentArray<Rigidbody>& rigidbodies,
+								ComponentArray<CircleCollider>& cColliders, ComponentArray<BoxCollider>& bColliders,
+								ComponentArray<CircleTrigger>& cTriggers, ComponentArray<BoxTrigger>& bTriggers);
+
 		std::unordered_multimap<Entity, Entity> collisions;
 		std::vector<Entity> colEntities;
 		std::unordered_map<Entity, Index> colEntityToIndex;
@@ -25,18 +31,50 @@ namespace SystemManager
 
 
 void SystemManager::Physics::Update(	ComponentArray<Transform>& transforms, ComponentArray<Rigidbody>& rigidbodies, 
-							ComponentArray<CircleCollider>& cColliders, ComponentArray<BoxCollider>& bColliders,
-							ComponentArray<CircleTrigger>& cTriggers, ComponentArray<BoxTrigger>& bTriggers, 
-							double dt)
+										ComponentArray<CircleCollider>& cColliders, ComponentArray<BoxCollider>& bColliders,
+										ComponentArray<CircleTrigger>& cTriggers, ComponentArray<BoxTrigger>& bTriggers)
 {
+	std::vector<std::thread> threads;
 
-	collisions.clear();
-
-	for (Entity entity : rbEntities)
+	// Kinematics
 	{
-		Transform* tf = transforms[entity];
-		Rigidbody* rb = rigidbodies[entity];
-		
+		std::vector<std::vector<Entity>> rbSplit = MultiThread::ParallelSplit(rbEntities, THREAD_COUNT);
+		for (auto& sub : rbSplit)
+		{
+			std::thread t{ RigidbodyUpdate, sub, std::ref(transforms), std::ref(rigidbodies) };
+			threads.push_back(std::move(t));
+		}
+
+		for (auto& t : threads)
+			t.join();
+
+		threads.clear();
+	}
+
+
+
+	// Collisions
+	{
+		collisions.clear();
+
+		std::queue<Entity> colUpdates;
+		for (auto col : colEntities)
+			colUpdates.push(col);
+
+		std::mutex queueMutex;
+		std::vector<Entity> busyEntities;
+		ColliderUpdate(colEntities, colEntities, transforms, rigidbodies, cColliders, bColliders, cTriggers, bTriggers);
+	}
+}
+
+
+void SystemManager::Physics::RigidbodyUpdate(std::vector<Entity> entities, ComponentArray<Transform>& transforms, ComponentArray<Rigidbody>& rigidbodies)
+{
+	for (Entity e : entities)
+	{
+		Transform* tf = transforms[e];
+		Rigidbody* rb = rigidbodies[e];
+
 		Vector2<float> direction = Normalize(rb->vel);
 		float speed = Magnitude(rb->vel);
 
@@ -44,13 +82,19 @@ void SystemManager::Physics::Update(	ComponentArray<Transform>& transforms, Comp
 
 		Vector2<float> prevPos = tf->pos;
 
-		rb->vel += (rb->acc * dt);
-		tf->pos += (rb->vel * dt) + (rb->acc * 0.5f * dt * dt);
+		rb->vel += (rb->acc * Time::dt);
+		tf->pos += (rb->vel * Time::dt) + (rb->acc * 0.5f * Time::dt * Time::dt);
 		rb->acc = dragForce / rb->mass + Vector2<float>{0, -rb->gravity};
 	}
+}
 
-	for (Entity e1 : colEntities)
-	for (Entity e2 : colEntities)
+void SystemManager::Physics::ColliderUpdate(	std::vector<Entity> entities1, std::vector<Entity> entities2,
+												ComponentArray<Transform>& transforms, ComponentArray<Rigidbody>& rigidbodies,
+												ComponentArray<CircleCollider>& cColliders, ComponentArray<BoxCollider>& bColliders,
+												ComponentArray<CircleTrigger>& cTriggers, ComponentArray<BoxTrigger>& bTriggers)
+{
+	for (Entity e1 : entities1)
+	for (Entity e2 : entities2)
 	{
 		if (e1 == e2)
 			continue;
@@ -100,8 +144,7 @@ void SystemManager::Physics::Update(	ComponentArray<Transform>& transforms, Comp
 		bool isCol = (circCol1 != nullptr || boxCol1 != nullptr);
 		bool otherIsCol = (circCol2 != nullptr || boxCol2 != nullptr);
 
-
-		
+		// Collision Detection
 		switch (type)
 		{
 			case
@@ -125,9 +168,9 @@ void SystemManager::Physics::Update(	ComponentArray<Transform>& transforms, Comp
 				colPos += isCol ? circCol1->pos : circTrig1->pos;
 				otherColPos += otherIsCol ? boxCol2->pos : boxTrig2->pos;
 				float r = isCol ? circCol1->radius : circTrig1->radius;
-				BoundingBox box = otherIsCol ? Transform{otherColPos, boxCol2->scale} : Transform{otherColPos, boxTrig2->scale};
+				BoundingBox box = otherIsCol ? Transform{ otherColPos, boxCol2->scale } : Transform{ otherColPos, boxTrig2->scale };
 
-				Vector2<float> closest = {std::clamp(colPos.x, box.left, box.right), std::clamp(colPos.y, box.bottom, box.top)};
+				Vector2<float> closest = { std::clamp(colPos.x, box.left, box.right), std::clamp(colPos.y, box.bottom, box.top) };
 				Vector2<float> distance = colPos - closest;
 
 				float distanceSquared = (distance.x * distance.x) + (distance.y * distance.y);
@@ -142,9 +185,9 @@ void SystemManager::Physics::Update(	ComponentArray<Transform>& transforms, Comp
 				colPos += isCol ? boxCol1->pos : boxTrig1->pos;
 				otherColPos += otherIsCol ? circCol2->pos : circTrig2->pos;
 				float r = otherIsCol ? circCol2->radius : circTrig2->radius;
-				BoundingBox box = isCol ? Transform{colPos, boxCol1->scale} : Transform{colPos, boxTrig1->scale};
+				BoundingBox box = isCol ? Transform{ colPos, boxCol1->scale } : Transform{ colPos, boxTrig1->scale };
 
-				Vector2<float> closest = {std::clamp(otherColPos.x, box.left, box.right), std::clamp(otherColPos.y, box.bottom, box.top)};
+				Vector2<float> closest = { std::clamp(otherColPos.x, box.left, box.right), std::clamp(otherColPos.y, box.bottom, box.top) };
 				Vector2<float> distance = otherColPos - closest;
 
 				float distanceSquared = (distance.x * distance.x) + (distance.y * distance.y);
@@ -156,17 +199,15 @@ void SystemManager::Physics::Update(	ComponentArray<Transform>& transforms, Comp
 			case
 			CollisionType::BOX_BOX:
 			{
-				BoundingBox box = isCol ? Transform{colPos, boxCol1->scale} : Transform{colPos, boxTrig1->scale};
-				BoundingBox otherBox = otherIsCol ? Transform{otherColPos, boxCol2->scale} : Transform{otherColPos, boxTrig2->scale};
+				BoundingBox box = isCol ? Transform{ colPos, boxCol1->scale } : Transform{ colPos, boxTrig1->scale };
+				BoundingBox otherBox = otherIsCol ? Transform{ otherColPos, boxCol2->scale } : Transform{ otherColPos, boxTrig2->scale };
 				if (!Overlapping(box, otherBox))
 					continue;
 			}
 			break;
 		}
 
-
 		collisions.insert({e1, e2});
-
 
 		if (!isCol || !otherIsCol)
 			continue;
@@ -174,7 +215,8 @@ void SystemManager::Physics::Update(	ComponentArray<Transform>& transforms, Comp
 		bool dynamic_dynamic = rb1 != nullptr && rb2 != nullptr;
 		bool dynamic_static = (rb1 != nullptr && rb2 == nullptr) || (rb1 == nullptr && rb2 != nullptr);
 		bool static_static = rb1 == nullptr && rb2 == nullptr;
-		
+
+		// Collisions Resolution
 		switch (type)
 		{
 			case
@@ -221,8 +263,8 @@ void SystemManager::Physics::Update(	ComponentArray<Transform>& transforms, Comp
 			case
 			CollisionType::BOX_BOX:
 			{
-				BoundingBox box = Transform{colPos, boxCol1->scale};
-				BoundingBox otherBox = Transform{otherColPos, boxCol2->scale};
+				BoundingBox box = Transform{ colPos, boxCol1->scale };
+				BoundingBox otherBox = Transform{ otherColPos, boxCol2->scale };
 				Transform tf = *tf1;
 				Transform otherTf = *tf2;
 
@@ -243,7 +285,7 @@ void SystemManager::Physics::Update(	ComponentArray<Transform>& transforms, Comp
 
 				Vector2<float> prevPos = tf.pos - vel * 1;
 
-				Vector2<float> dp = {0,0};
+				Vector2<float> dp = { 0,0 };
 				if (prevPos.x < otherTf.pos.x)
 					dp.x = otherBox.left - box.right;
 				else if (prevPos.x > otherTf.pos.x)
@@ -255,8 +297,8 @@ void SystemManager::Physics::Update(	ComponentArray<Transform>& transforms, Comp
 					dp.y = otherBox.top - box.bottom;
 
 
-				Vector2<float> timeUntilCollision = {vel.x != 0 ? std::abs(dp.x / vel.x) : std::numeric_limits<float>::infinity(),
-														vel.y != 0 ? std::abs(dp.y / vel.y) : std::numeric_limits<float>::infinity()};
+				Vector2<float> timeUntilCollision = { vel.x != 0 ? std::abs(dp.x / vel.x) : std::numeric_limits<float>::infinity(),
+														vel.y != 0 ? std::abs(dp.y / vel.y) : std::numeric_limits<float>::infinity() };
 
 				if (timeUntilCollision.x < timeUntilCollision.y)
 				{

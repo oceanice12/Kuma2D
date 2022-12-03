@@ -1,11 +1,11 @@
 #include <Game.h>
 #include <Macros.h>
-
+#include <numeric>
 
 constexpr float PLAYER_MOVE_FORCE{ 1000 };
-constexpr float ENEMY_MOVE_FORCE{ 1200 };
+constexpr float ENEMY_MOVE_FORCE{ 100 };
 constexpr float SWORD_SIZE{ 4 };
-constexpr int MAX_ENEMIES{ 50 };
+constexpr int MAX_ENEMIES{ 100 };
 
 Timer timerSwordActive = { 0.3 };
 Timer timerSwordAttack = { 0.5 };
@@ -18,6 +18,8 @@ Entity sword;
 int score = 0;
 Entity scoreHUD;
 Entity fpsHUD;
+
+std::vector<int> fps;
 
 void Kuma2D::Start()
 {
@@ -54,7 +56,6 @@ void Kuma2D::Start()
 		sp(e) = GetSprite("res\\sprites\\box.png");
 		bc(e).scale = tf(e).scale;
 	}
-
 
 	// Camera
 	{
@@ -228,9 +229,12 @@ void Kuma2D::Update()
 
 		tf(fpsHUD).pos.x = ScreenToWorldPos({ (int)(-WINDOW_SIZE.x / 2.f + tf(fpsHUD).scale.x / 2 + 10), 0 }).x;
 		timerFPS.Tick();
+		fps.push_back((int)(1 / Time::dt));
 		if (timerFPS.Done())
 		{
-			txt(fpsHUD).text = "FPS: " + std::to_string((int)(1 / Time::dt));
+			int avgFps = std::accumulate(fps.begin(), fps.end(), 0) / fps.size();
+			txt(fpsHUD).text = "FPS: " + std::to_string(avgFps);
+			fps.clear();
 			timerFPS.Reset();
 		}
 	}

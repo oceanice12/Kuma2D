@@ -21,8 +21,7 @@ void SystemManager::Update()
 							ComponentManager::GetArray<CircleCollider>(), 
 							ComponentManager::GetArray<BoxCollider>(), 
 							ComponentManager::GetArray<CircleTrigger>(), 
-							ComponentManager::GetArray<BoxTrigger>(),
-							Time::dt);
+							ComponentManager::GetArray<BoxTrigger>());
 
 
 	Render::Update(			ComponentManager::GetArray<Transform>(), 

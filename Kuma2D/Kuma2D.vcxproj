@@ -176,6 +176,7 @@
   <ItemGroup>
     <ClInclude Include="Engine\Components\Text.h" />
     <ClInclude Include="Engine\Core\Kuma2D_impl.h" />
+    <ClInclude Include="Engine\Misc\Concurrency.h" />
     <ClInclude Include="Engine\Systems\AudioSystem.h" />
     <ClInclude Include="Engine\Components\Collider.h" />
     <ClInclude Include="Engine\Components\ComponentsPlus.h" />
