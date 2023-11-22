@@ -1,3 +1,53 @@
+/*
+|--------------------------*   KUMA2D   *--------------------------|
+| Kuma2D is a 2D GAME ENGINE built from scratch. 
+| SDL2 APIs are used to handle low level I/O for easy portability.
+| 
+|
+| Kuma2D utilizes DATA-ORIENTED DESIGN. 
+|
+|
+| WHY NOT OBJECTED-ORIENTED DESIGN:
+|
+| In a traditional Object-Oriented design, data is packaged
+| together into discrete classes that represent an entity in
+| a game. This approach is programmer friendly because all the
+| data for a game object can be found in one place. 
+| However, for that very reason, Object-Oriented design is not
+| computer friendly.
+|
+| Say for example the player inputs a movement key for their
+| character to move forward. The only data we are concerned with
+| is the player character's position and physics. However, because
+| our game entities package ALL their data ranging from position
+| to sprites into one object, we must load ALL data concerning
+| our player character. This means that even though we only mean
+| to manipulate the player's position, we are forced to load ALL
+| of the player's data whether we need it or not.
+|
+| This is no real issue when our game only has a few objects
+| loaded at anytime, however, performance greatly suffers
+| as the size of manipulated data increases. This is where
+| Data-Oriented Design comes into play.
+|
+|
+| WHY DATA-ORIENTED DESIGN:
+|
+|
+| Each entity is a number
+| used to index into arrays of similar data. This approach is much
+| faster than grouping different data into their own shared
+| object such as in an object-oriented design.
+|-------------------------------------------------------------------
+*/
+
+
+
+
+
+
+
+
 #pragma once
 #include <RNG.h>
 #include <Input.h>
@@ -13,30 +63,30 @@ namespace Kuma2D
 	void Start();
 	void Update();
 
-	Entity							CreateEntity();
-	Entity							CreateEntity(Signature signature);
-	Entity							CreateEntity(ComponentFlag flag);
-	void							DeleteEntity(Entity entity);
+	Entity							CreateEntity					();
+	Entity							CreateEntity					(Signature signature);
+	Entity							CreateEntity					(ComponentFlag flag);
+	void							DeleteEntity					(Entity entity);
 
-	const std::vector<Entity>*		Entities(Type type = "");
-	Type							GetType(Entity entity);
-	void							SetType(Type type, Entity entity);
+	const std::vector<Entity>*		Entities						(Type type = "");
+	Type							GetType							(Entity entity);
+	void							SetType							(Type type, Entity entity);
 
-	void							Camera(Entity entity);
-	Vector2<float>					ScreenToWorldPos(Vector2<int> screenPos);
+	void							Camera							(Entity entity);
+	Vector2<float>					ScreenToWorldPos				(Vector2<int> screenPos);
 
-	const Sprite&					GetSprite(std::string path);
-	TTF_Font*						GetFont(std::string path);
-	const std::vector<Entity>		GetCollisions(Entity entity);
+	const Sprite&					GetSprite						(std::string path);
+	TTF_Font*						GetFont							(std::string path);
+	const std::vector<Entity>		GetCollisions					(Entity entity);
 
-	template<typename T> void		AddComponent(Entity entity);
-	template<typename T> T&			GetComponent(Entity entity);
-	template<typename T> void		DeleteComponent(Entity entity);
+	template<typename T> void		AddComponent					(Entity entity);
+	template<typename T> T&			GetComponent					(Entity entity);
+	template<typename T> void		DeleteComponent					(Entity entity);
 
-	void							PlayAudio(std::string path, int loops = 0);
+	void							PlayAudio						(std::string path, int loops = 0);
 
-	void							FullScreen();
-	void							SetResolution(Vector2<int> resolution);
+	void							FullScreen						();
+	void							SetResolution					(Vector2<int> resolution);
 }
 
 

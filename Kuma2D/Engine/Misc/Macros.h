@@ -9,3 +9,5 @@
 #define bt(e) (GetComponent<BoxTrigger>(e))
 #define ct(e) (GetComponent<CircleTrigger>(e))
 #define txt(e) (GetComponent<Text>(e))
+
+#define CF ComponentFlag
