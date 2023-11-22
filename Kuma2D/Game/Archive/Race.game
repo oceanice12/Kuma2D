@@ -1,0 +1,72 @@
+#include <Game.h>
+#include <Macros.h>
+
+constexpr float PLAYER_MOVE_FORCE{ 1000 };
+constexpr Vector2<float> ZOOM_FACTOR{ 10,10 };
+
+Entity player;
+Entity background;
+Entity camera;
+
+void Kuma2D::Start()
+{
+	player = CreateEntity(ComponentFlag::TRANSFORM | ComponentFlag::SPRITE | ComponentFlag::RIGIDBODY);
+	tf(player).scale = { 10,10 };
+	tf(player).pos = { -400,0 };
+	sp(player) = GetSprite("res\\sprites\\car.png");
+	sp(player).layer = 1;
+	rb(player).drag = { 5,0.001 };
+
+	background = CreateEntity(ComponentFlag::TRANSFORM | ComponentFlag::SPRITE);
+	tf(background).pos = { 0,0 };
+	sp(background) = GetSprite("res\\sprites\\track0.png");
+	sp(background).layer = 0;
+	tf(background).scale = sp(background).scale;
+
+	// Camera
+	camera = CreateEntity(ComponentFlag::TRANSFORM);
+	tf(camera).scale = { 2,2 };
+}
+
+
+void Kuma2D::Update()
+{
+	// Player
+	{
+		// Input
+		{
+			Vector2<float> direction = { 0,0 };
+
+			direction = Input::Controller::GetAxis();
+
+			if (Input::Keyboard::GetKey(SDL_SCANCODE_W))
+				direction.y += 1;
+			if (Input::Keyboard::GetKey(SDL_SCANCODE_S))
+				direction.y -= 1;
+			if (Input::Keyboard::GetKey(SDL_SCANCODE_A))
+				direction.x -= 1;
+			if (Input::Keyboard::GetKey(SDL_SCANCODE_D))
+				direction.x += 1;
+
+			direction = Normalize(direction);
+			Vector2<float> force = direction * PLAYER_MOVE_FORCE;
+
+			rb(player).AddForce(force);
+
+			if (Input::Controller::GetButtonDown(Input::Controller::Button::A) || Input::Keyboard::GetKeyDown(SDL_SCANCODE_LSHIFT))
+				rb(player).AddImpulse(force);
+		}
+	}
+
+	// Camera
+	{
+		if (Input::Keyboard::GetKey(SDL_SCANCODE_P))
+			tf(camera).scale += ZOOM_FACTOR * Time::dt * tf(camera).scale;
+		if (Input::Keyboard::GetKey(SDL_SCANCODE_L))
+			tf(camera).scale -= ZOOM_FACTOR * Time::dt * tf(camera).scale;
+		if (Input::Keyboard::GetKey(SDL_SCANCODE_R))
+			tf(camera).scale = { 1,1 };
+		tf(camera).pos = tf(player).pos;
+		Camera(camera);
+	}
+}

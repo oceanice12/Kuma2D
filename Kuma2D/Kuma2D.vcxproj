@@ -199,6 +199,7 @@
     <ClInclude Include="Engine\Misc\Types.h" />
     <ClInclude Include="Engine\Misc\Settings.h" />
     <ClInclude Include="Engine\Core\Kuma2D.h" />
+    <ClInclude Include="Game\Kingdom.h" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">

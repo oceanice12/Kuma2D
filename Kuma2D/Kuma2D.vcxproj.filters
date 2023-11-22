@@ -128,5 +128,8 @@
     <ClInclude Include="Engine\Misc\Concurrency.h">
       <Filter>Header Files</Filter>
     </ClInclude>
+    <ClInclude Include="Game\Kingdom.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
   </ItemGroup>
 </Project>
