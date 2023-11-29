@@ -88,8 +88,8 @@ void SystemManager::Render::Update(ComponentArray<Transform>& transforms, Compon
 
 		if (screenPos.x > WINDOW_SIZE.x || 
 			screenPos.y > WINDOW_SIZE.y || 
-			screenPos.x + tf->scale.x < 0 || 
-			screenPos.y + tf->scale.y < 0)
+			screenPos.x + tf->scale.x * camera.scale.x < 0 || 
+			screenPos.y + tf->scale.y * camera.scale.y < 0)
 			continue;
 
 		Sprite* sp = sprites[entity];
