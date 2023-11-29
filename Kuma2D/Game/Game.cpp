@@ -2,48 +2,57 @@
 #include <Macros.h>
 #include <Kingdom.h>
 
+constexpr Vector2<float> ZOOM_FACTOR{1,1};
+constexpr float CAM_SPEED{100};
+
 Entity king;
 Entity background, castle, hud;
+Entity camera;
 
 void Kuma2D::Start()
 {
-	hud = CreateEntity(CF::TRANSFORM | CF::SPRITE);
-	SetType("HUD", hud);
-	sp(hud) = GetSprite("res\\sprites\\hud.png");
-	sp(hud).layer = 100;
-	tf(hud).pos = {0, 350};
-	tf(hud).scale = sp(hud).scale;
+	camera = CreateEntity(CF::TRANSFORM);
+	tf(camera).pos = {0,0};
+	tf(camera).scale = {1,1};
 
-	background = CreateEntity(CF::TRANSFORM | CF::SPRITE);
-	SetType("Background", background);
-	sp(background) = GetSprite("res\\sprites\\grass.png");
-	sp(background).layer = -1;
-	tf(background).pos = {0,-50};
-	tf(background).scale = sp(background).scale;
+	ResourceMap rm = CreateResourceMap();
 
-	castle = CreateEntity(CF::TRANSFORM | CF::SPRITE | CF::BOX_COLLIDER);
-	SetType("Castle", castle);
-	sp(castle) = GetSprite("res\\sprites\\castle.png");
-	sp(castle).layer = 0;
-	tf(castle).pos = {0,-50};
-	tf(castle).scale = sp(castle).scale;
-	bc(castle).pos = tf(castle).pos;
-	bc(castle).scale = tf(castle).scale;
+	for (int x = 0; x < MAP_SIZE.x; x++)
+		for (int y = 0; y < MAP_SIZE.y; y++)
+		{
+			Entity e = CreateEntity(CF::TRANSFORM | CF::SPRITE);
+			tf(e).scale = Vector2<float>(TILE_SIZE);
+			tf(e).pos = {	float(x * TILE_SIZE.x) + (TILE_SIZE.x / 2) - (WINDOW_SIZE.x / 2),
+							float(y * TILE_SIZE.y) + (TILE_SIZE.y / 2) - (WINDOW_SIZE.y / 2)};
+			switch (rm[x][y])
+			{
+			case Resource::None:
+				sp(e) = GetSprite("res\\sprites\\grass_64.png");
+				SetType("grass", e);
+				break;
 
-	SpawnResource("worker", 1);
+			case Resource::Bush:
+				sp(e) = GetSprite("res\\sprites\\bush_64.png");
+				SetType("bush", e);
+				break;
 
-	SpawnResource("bush", 15);
-	SpawnResource("tree", 5);
-	SpawnResource("rock", 5);
-	SpawnResource("goldrock", 1);
+			case Resource::Tree:
+				sp(e) = GetSprite("res\\sprites\\tree_64.png");
+				SetType("tree", e);
+				break;
+			}
+		}
 }
 
 
 void Kuma2D::Update()
 {
+	Camera(camera);
+
 	// Input
 	{
 		// Workers
+		/*
 		if (Input::Mouse::GetButton(SDL_BUTTON_LEFT))
 			for (Entity e : *Entities("worker"))
 			{
@@ -55,8 +64,24 @@ void Kuma2D::Update()
 				}
 
 			}
+			*/
 
-		if (Input::Keyboard::GetKeyDown(SDL_SCANCODE_SPACE))
-			SpawnResource("bush", 1);
+
+
+		if (Input::Keyboard::GetKey(SDL_SCANCODE_W))
+			tf(camera).pos.y += CAM_SPEED * Time::dt / tf(camera).scale.y;
+		if (Input::Keyboard::GetKey(SDL_SCANCODE_S))
+			tf(camera).pos.y -= CAM_SPEED * Time::dt / tf(camera).scale.y;
+		if (Input::Keyboard::GetKey(SDL_SCANCODE_A))
+			tf(camera).pos.x -= CAM_SPEED * Time::dt / tf(camera).scale.x;
+		if (Input::Keyboard::GetKey(SDL_SCANCODE_D))
+			tf(camera).pos.x += CAM_SPEED * Time::dt / tf(camera).scale.x;
+
+		if (Input::Keyboard::GetKeyDown(SDL_SCANCODE_P) && tf(camera).scale.x < 4)
+			tf(camera).scale *= 2;
+		if (Input::Keyboard::GetKeyDown(SDL_SCANCODE_L) && tf(camera).scale.x > 1)
+			tf(camera).scale *= 0.5;
+		if (Input::Keyboard::GetKeyDown(SDL_SCANCODE_R))
+			tf(camera).scale = {1,1};
 	}
 }

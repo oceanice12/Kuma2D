@@ -1,9 +1,26 @@
 #pragma once
 #include <Kuma2D.h>
 #include <Macros.h>
+#include <array>
 
 using namespace Kuma2D;
 
+inline constexpr Vector2<int> MAP_SIZE = {32,32};
+inline constexpr Vector2<int> TILE_SIZE = {16,16};
+
+enum Resource
+{
+	None = 0,
+	Bush,
+	Tree,
+	Rock,
+	Ore
+};
+
+using ResourceMap = std::array<std::array<Resource, MAP_SIZE.y>, MAP_SIZE.x>;
+
+
+/*
 void SpawnResource(Type type, int count)
 {
 	for (int i = 0; i < count; i++)
@@ -50,6 +67,27 @@ void SpawnResource(Type type, int count)
 		if (tries == 0)
 			DeleteEntity(e);
 	}
+}
+*/
+
+ResourceMap CreateResourceMap()
+{
+	int rng = 0;
+
+	ResourceMap rm;
+	for (auto& row : rm)
+		for (auto& resource : row)
+		{
+			rng = rand() % 100;
+			if (rng <= 50)
+				resource = Resource::None;
+			else if (rng > 50 && rng < 75)
+				resource = Resource::Bush;
+			else
+				resource = Resource::Tree;
+		}
+
+	return std::move(rm);
 }
 
 void SpawnWorker()
