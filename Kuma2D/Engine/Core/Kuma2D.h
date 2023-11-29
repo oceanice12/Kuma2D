@@ -56,6 +56,7 @@
 #include <EntityManager.h>
 #include <ComponentManager.h>
 #include <SystemManager.h>
+#include <Macros.h>
 
 
 namespace Kuma2D

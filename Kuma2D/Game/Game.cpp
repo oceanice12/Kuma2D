@@ -1,5 +1,4 @@
 #include <Game.h>
-#include <Macros.h>
 #include <Kingdom.h>
 
 constexpr Vector2<float> ZOOM_FACTOR{1,1};
