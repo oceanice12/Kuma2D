@@ -2,7 +2,7 @@
 #include <Vector2.h>
 #include <thread>
 
-inline Vector2<int> WINDOW_SIZE = {700, 800};
+inline Vector2<int> WINDOW_SIZE = {512, 512};
 
 // Change to function to allow update for area
 // In the case that size changes
