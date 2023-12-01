@@ -8,7 +8,7 @@ Entity king;
 Entity background, castle, hud;
 Entity camera;
 
-void Kuma2D::Start()
+void Game::Start()
 {
 	camera = CreateEntity(CF::TRANSFORM);
 	tf(camera).pos = {0,0};
@@ -44,7 +44,7 @@ void Kuma2D::Start()
 }
 
 
-void Kuma2D::Update()
+void Game::Update()
 {
 	Camera(camera);
 

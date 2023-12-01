@@ -2,6 +2,7 @@
 #include <ctime>
 #include <Kuma2D.h>
 #include <Kuma2d_impl.h>
+#include <Game.h>
 
 
 int main(int argc, char** argv)
@@ -28,11 +29,11 @@ int main(int argc, char** argv)
 
 	Kuma2D::Init();
 
-	Kuma2D::Start(); // User scripted start
+	Game::Start(); // User scripted start
 
 	while (Input::Update())
 	{
-		Kuma2D::Update();	// User scripted update
+		Game::Update();	// User scripted update
 		Kuma2D::UpdateSystems();
 	}
 

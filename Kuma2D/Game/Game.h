@@ -5,7 +5,6 @@
 
 namespace Game
 {
-	using namespace Kuma2D;
-	void Kuma2D::Start();
-	void Kuma2D::Update();
+	void Start();
+	void Update();
 }
