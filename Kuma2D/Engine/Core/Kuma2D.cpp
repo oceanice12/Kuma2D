@@ -1,11 +1,37 @@
 #include "Kuma2D.h"
-#include "Kuma2D_impl.h"
 
 void Kuma2D::Init()
 {
+	srand(time(NULL));
+
+	if (SDL_Init(SDL_INIT_EVERYTHING) < 0)
+	{
+		std::cout << "ERROR! FAILED TO INITIALIZE SDL. " << SDL_GetError() << std::endl;
+		exit(EXIT_FAILURE);
+	}
+
+	if (IMG_Init(IMG_INIT_PNG) < 0)
+	{
+		std::cout << "ERROR! FAILED TO INITIALIZE SDL IMG. " << SDL_GetError() << std::endl;
+		exit(EXIT_FAILURE);
+	}
+
+	if (TTF_Init() < 0)
+	{
+		std::cout << "ERROR! FAILED TO INITIALIZE SDL TEXT. " << SDL_GetError() << std::endl;
+		exit(EXIT_FAILURE);
+	}
+
 	EntityManager::Init();
 	ComponentManager::Init();
 	SystemManager::Init();
+}
+
+void Kuma2D::Quit()
+{
+	TTF_Quit();
+	IMG_Quit();
+	SDL_Quit();
 }
 
 Entity Kuma2D::CreateEntity()

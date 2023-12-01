@@ -49,6 +49,8 @@
 
 
 #pragma once
+#include <iostream>
+#include <ctime>
 #include <RNG.h>
 #include <Input.h>
 #include <Types.h>
@@ -61,6 +63,10 @@
 
 namespace Kuma2D
 {
+	void Init();
+	void UpdateSystems();
+	void Quit();
+
 	Entity							CreateEntity					();
 	Entity							CreateEntity					(Signature signature);
 	Entity							CreateEntity					(ComponentFlag flag);

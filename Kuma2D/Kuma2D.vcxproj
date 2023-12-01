@@ -41,13 +41,13 @@
     <CharacterSet>Unicode</CharacterSet>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'" Label="Configuration">
-    <ConfigurationType>Application</ConfigurationType>
+    <ConfigurationType>StaticLibrary</ConfigurationType>
     <UseDebugLibraries>true</UseDebugLibraries>
     <PlatformToolset>v143</PlatformToolset>
     <CharacterSet>Unicode</CharacterSet>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'" Label="Configuration">
-    <ConfigurationType>Application</ConfigurationType>
+    <ConfigurationType>StaticLibrary</ConfigurationType>
     <UseDebugLibraries>false</UseDebugLibraries>
     <PlatformToolset>v143</PlatformToolset>
     <WholeProgramOptimization>true</WholeProgramOptimization>
@@ -168,14 +168,11 @@
     <ClCompile Include="Engine\Core\SystemManager.cpp" />
     <ClCompile Include="Engine\Peripherals\Input.cpp" />
     <ClCompile Include="Engine\Core\EntityArray.cpp" />
-    <ClCompile Include="Game\Game.cpp" />
     <ClCompile Include="Engine\Core\Kuma2D.cpp" />
-    <ClCompile Include="main.cpp" />
     <ClCompile Include="Engine\Systems\RenderSystem.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="Engine\Components\Text.h" />
-    <ClInclude Include="Engine\Core\Kuma2D_impl.h" />
     <ClInclude Include="Engine\Misc\Concurrency.h" />
     <ClInclude Include="Engine\Systems\AudioSystem.h" />
     <ClInclude Include="Engine\Components\Collider.h" />
@@ -192,14 +189,12 @@
     <ClInclude Include="Engine\Peripherals\Clock.h" />
     <ClInclude Include="Engine\Peripherals\Input.h" />
     <ClInclude Include="Engine\Core\EntityArray.h" />
-    <ClInclude Include="Game\Game.h" />
     <ClInclude Include="Engine\Math\RNG.h" />
     <ClInclude Include="Engine\Math\Vector2.h" />
     <ClInclude Include="Engine\Systems\RenderSystem.h" />
     <ClInclude Include="Engine\Misc\Types.h" />
     <ClInclude Include="Engine\Misc\Settings.h" />
     <ClInclude Include="Engine\Core\Kuma2D.h" />
-    <ClInclude Include="Game\Kingdom.h" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">
