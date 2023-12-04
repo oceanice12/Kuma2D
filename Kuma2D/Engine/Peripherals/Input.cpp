@@ -68,6 +68,8 @@ void Input::Mouse::Update()
 	buttons = SDL_GetMouseState(&Mouse::pos.x, &Mouse::pos.y);
 	pos -= WINDOW_SIZE / 2;
 	pos.y *= -1;
+
+	scroll = 0;
 }
 
 
