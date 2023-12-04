@@ -11,6 +11,7 @@ namespace Input
 		std::unordered_map<uint8_t, bool> buttonsDown;
 		std::unordered_map<uint8_t, bool> buttonsUp;
 		uint8_t buttons;
+		int scroll;
 	}
 
 	namespace Keyboard
@@ -40,6 +41,8 @@ const bool Input::Mouse::GetButton(uint8_t button) { return (buttons & button); 
 const bool Input::Mouse::GetButtonUp(uint8_t button) { return buttonsUp[button]; };
 const bool Input::Mouse::GetButtonDown(uint8_t button) { return buttonsDown[button]; }
 const Vector2<int> Input::Mouse::GetPos() { return pos; };
+const int Input::Mouse::GetScroll() { return scroll; }
+
 void Input::Mouse::Event(const SDL_Event& event)
 {
 	switch (event.type)
@@ -50,6 +53,10 @@ void Input::Mouse::Event(const SDL_Event& event)
 
 	case SDL_MOUSEBUTTONUP:
 		buttonsUp[event.button.button] = true;
+		break;
+
+	case SDL_MOUSEWHEEL:
+		scroll = event.wheel.y;
 		break;
 	}
 }
@@ -163,6 +170,7 @@ bool Input::Update()
 
 		case SDL_MOUSEBUTTONDOWN:
 		case SDL_MOUSEBUTTONUP:
+		case SDL_MOUSEWHEEL:
 			Mouse::Event(event);
 		}
 	}

@@ -20,6 +20,7 @@ namespace Input
 		const bool GetButton(uint8_t button);
 		const bool GetButtonUp(uint8_t button);
 		const bool GetButtonDown(uint8_t button);
+		const int GetScroll();
 		const Vector2<int> GetPos();
 	}
 

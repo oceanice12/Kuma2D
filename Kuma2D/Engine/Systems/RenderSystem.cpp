@@ -173,6 +173,7 @@ void SystemManager::Render::FullScreen()
 void SystemManager::Render::SetResolution(Vector2<int> resolution)
 {
 	WINDOW_SIZE = resolution;
+	WINDOW_AREA = WINDOW_SIZE.x * WINDOW_SIZE.y;
 	SDL_SetWindowSize(window, resolution.x, resolution.y);
 	SDL_SetHint(SDL_HINT_RENDER_SCALE_QUALITY, "linear");  // make the scaled rendering look smoother.
 	SDL_RenderSetLogicalSize(renderer, resolution.x, resolution.y);
