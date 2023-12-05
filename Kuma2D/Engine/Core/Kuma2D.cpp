@@ -34,6 +34,13 @@ void Kuma2D::Quit()
 	SDL_Quit();
 }
 
+void Kuma2D::QuitGame()
+{
+	SDL_Event quit;
+	quit.type = SDL_QUIT;
+	SDL_PushEvent(&quit);
+}
+
 Entity Kuma2D::CreateEntity()
 {
 	return EntityManager::CreateEntity();

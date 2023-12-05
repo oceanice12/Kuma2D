@@ -91,6 +91,7 @@ namespace Kuma2D
 
 	void							FullScreen						();
 	void							SetResolution					(Vector2<int> resolution);
+	void							QuitGame						();
 }
 
 
