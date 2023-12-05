@@ -138,9 +138,9 @@ const Sprite& Kuma2D::GetSprite(std::string path)
 	return SystemManager::Render::GetSprite(path);
 }
 
-void Kuma2D::FullScreen()
+void Kuma2D::FullScreen(bool setting)
 {
-	SystemManager::Render::FullScreen();
+	SystemManager::Render::FullScreen(setting);
 }
 void Kuma2D::SetResolution(Vector2<int> resolution)
 {

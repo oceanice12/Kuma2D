@@ -89,7 +89,7 @@ namespace Kuma2D
 
 	void							PlayAudio						(std::string path, int loops = 0);
 
-	void							FullScreen						();
+	void							FullScreen						(bool setting);
 	void							SetResolution					(Vector2<int> resolution);
 	void							QuitGame						();
 }

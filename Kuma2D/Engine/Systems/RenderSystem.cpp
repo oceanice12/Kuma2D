@@ -31,8 +31,7 @@ namespace SystemManager
 
 void SystemManager::Render::Init()
 {
-	int flags = FULLSCREEN ? SDL_WINDOW_FULLSCREEN_DESKTOP : NULL;
-	window = SDL_CreateWindow(WINDOW_NAME, SDL_WINDOWPOS_CENTERED, SDL_WINDOWPOS_CENTERED, WINDOW_SIZE.x, WINDOW_SIZE.y, flags);
+	window = SDL_CreateWindow(WINDOW_NAME, SDL_WINDOWPOS_CENTERED, SDL_WINDOWPOS_CENTERED, WINDOW_SIZE.x, WINDOW_SIZE.y, NULL);
 	if (window == nullptr)
 	{
 		std::cout << "ERROR! FAILED TO CREATE WINDOW. " << SDL_GetError() << std::endl;
@@ -159,10 +158,9 @@ TTF_Font* SystemManager::Render::LoadFont(const char* path)
 	return font;
 }
 
-void SystemManager::Render::FullScreen()
+void SystemManager::Render::FullScreen(bool setting)
 {
-	FULLSCREEN = !FULLSCREEN;
-	int flags = FULLSCREEN ? SDL_WINDOW_FULLSCREEN_DESKTOP : NULL;
+	int flags = setting ? SDL_WINDOW_FULLSCREEN_DESKTOP : NULL;
 	SDL_SetWindowFullscreen(window, flags);
 	
 

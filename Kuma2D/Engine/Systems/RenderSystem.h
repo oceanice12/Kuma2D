@@ -23,7 +23,7 @@ namespace SystemManager
 		void Update(ComponentArray<Transform>& transforms, ComponentArray<Sprite>& sprites, ComponentArray<Text>& texts);
 		const Sprite& GetSprite(std::string path);
 		TTF_Font* GetFont(std::string path);
-		void FullScreen();
+		void FullScreen(bool setting);
 		void SetResolution(Vector2<int> resolution);
 
 		extern Transform camera;
