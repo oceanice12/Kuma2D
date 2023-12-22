@@ -6,10 +6,21 @@ namespace SystemManager
 	{
 		void RigidbodyUpdate(std::vector<Entity> entities, ComponentArray<Transform>& transforms, ComponentArray<Rigidbody>& rigidbodies);
 
-		void ColliderUpdate(	std::vector<Entity> entities1, std::vector<Entity> entities2, 
+		void ColliderUpdate(	std::vector<Entity> entities, 
 								ComponentArray<Transform>& transforms, ComponentArray<Rigidbody>& rigidbodies,
 								ComponentArray<CircleCollider>& cColliders, ComponentArray<BoxCollider>& bColliders,
 								ComponentArray<CircleTrigger>& cTriggers, ComponentArray<BoxTrigger>& bTriggers);
+
+		
+
+		enum class CollisionType
+		{
+			NONE,
+			CIRCLE_CIRCLE,
+			CIRCLE_BOX,
+			BOX_CIRCLE,
+			BOX_BOX
+		};
 
 		std::unordered_multimap<Entity, Entity> collisions;
 		std::vector<Entity> colEntities;
@@ -61,9 +72,7 @@ void SystemManager::Physics::Update(	ComponentArray<Transform>& transforms, Comp
 		for (auto col : colEntities)
 			colUpdates.push(col);
 
-		std::mutex queueMutex;
-		std::vector<Entity> busyEntities;
-		ColliderUpdate(colEntities, colEntities, transforms, rigidbodies, cColliders, bColliders, cTriggers, bTriggers);
+		ColliderUpdate(colEntities, transforms, rigidbodies, cColliders, bColliders, cTriggers, bTriggers);
 	}
 }
 
@@ -88,13 +97,13 @@ void SystemManager::Physics::RigidbodyUpdate(std::vector<Entity> entities, Compo
 	}
 }
 
-void SystemManager::Physics::ColliderUpdate(	std::vector<Entity> entities1, std::vector<Entity> entities2,
+void SystemManager::Physics::ColliderUpdate(	std::vector<Entity> entities,
 												ComponentArray<Transform>& transforms, ComponentArray<Rigidbody>& rigidbodies,
 												ComponentArray<CircleCollider>& cColliders, ComponentArray<BoxCollider>& bColliders,
 												ComponentArray<CircleTrigger>& cTriggers, ComponentArray<BoxTrigger>& bTriggers)
 {
-	for (Entity e1 : entities1)
-	for (Entity e2 : entities2)
+	for (Entity e1 : entities)
+	for (Entity e2 : entities)
 	{
 		if (e1 == e2)
 			continue;
@@ -119,17 +128,8 @@ void SystemManager::Physics::ColliderUpdate(	std::vector<Entity> entities1, std:
 		CircleTrigger* circTrig2 = cTriggers[e2];
 		BoxTrigger* boxTrig2 = bTriggers[e2];
 
-		Vector2<float> colPos = tf1->pos;
-		Vector2<float> otherColPos = tf2->pos;
 
-		enum class CollisionType
-		{
-			NONE,
-			CIRCLE_CIRCLE,
-			CIRCLE_BOX,
-			BOX_CIRCLE,
-			BOX_BOX
-		};
+		
 
 		CollisionType type = CollisionType::NONE;
 		if ((circCol1 != nullptr || circTrig1 != nullptr) && (circCol2 != nullptr || circTrig2 != nullptr))
@@ -141,22 +141,24 @@ void SystemManager::Physics::ColliderUpdate(	std::vector<Entity> entities1, std:
 		else if ((boxCol1 != nullptr || boxTrig1 != nullptr) && (boxCol2 != nullptr || boxTrig2 != nullptr))
 			type = CollisionType::BOX_BOX;
 
-		bool isCol = (circCol1 != nullptr || boxCol1 != nullptr);
-		bool otherIsCol = (circCol2 != nullptr || boxCol2 != nullptr);
 
-		// Collision Detection
+		Vector2<float> colPos1 = tf1->pos;
+		Vector2<float> colPos2 = tf2->pos;
+		bool isCol1 = (circCol1 != nullptr || boxCol1 != nullptr);
+		bool isCol2 = (circCol2 != nullptr || boxCol2 != nullptr);
+
 		switch (type)
 		{
 			case
 			CollisionType::CIRCLE_CIRCLE:
 			{
-				float r1 = isCol ? circCol1->radius : circTrig1->radius;
-				float r2 = otherIsCol ? circCol2->radius : circTrig2->radius;
-				colPos = isCol ? circCol1->pos : circTrig1->pos;
-				colPos += tf1->pos;
-				otherColPos = otherIsCol ? circCol2->pos : circTrig2->pos;
-				otherColPos += tf2->pos;
-				if (Distance(colPos, otherColPos) >= r1 + r2)
+				float r1 = isCol1 ? circCol1->radius : circTrig1->radius;
+				float r2 = isCol2 ? circCol2->radius : circTrig2->radius;
+
+				colPos1 += isCol1 ? circCol1->pos : circTrig1->pos;
+				colPos2 += isCol2 ? circCol2->pos : circTrig2->pos;
+
+				if (Distance(colPos1, colPos2) >= r1 + r2)
 					continue;
 			}
 			break;
@@ -165,13 +167,13 @@ void SystemManager::Physics::ColliderUpdate(	std::vector<Entity> entities1, std:
 			case
 			CollisionType::CIRCLE_BOX:
 			{
-				colPos += isCol ? circCol1->pos : circTrig1->pos;
-				otherColPos += otherIsCol ? boxCol2->pos : boxTrig2->pos;
-				float r = isCol ? circCol1->radius : circTrig1->radius;
-				BoundingBox box = otherIsCol ? Transform{ otherColPos, boxCol2->scale } : Transform{ otherColPos, boxTrig2->scale };
+				colPos1 += isCol1 ? circCol1->pos : circTrig1->pos;
+				colPos2 += isCol2 ? boxCol2->pos : boxTrig2->pos;
+				float r = isCol1 ? circCol1->radius : circTrig1->radius;
+				BoundingBox box = isCol2 ? Transform{colPos2, boxCol2->scale} : Transform{colPos2, boxTrig2->scale};
 
-				Vector2<float> closest = { std::clamp(colPos.x, box.left, box.right), std::clamp(colPos.y, box.bottom, box.top) };
-				Vector2<float> distance = colPos - closest;
+				Vector2<float> closest = {std::clamp(colPos1.x, box.left, box.right), std::clamp(colPos1.y, box.bottom, box.top)};
+				Vector2<float> distance = colPos1 - closest;
 
 				float distanceSquared = (distance.x * distance.x) + (distance.y * distance.y);
 				if (distanceSquared >= (r * r))
@@ -182,13 +184,13 @@ void SystemManager::Physics::ColliderUpdate(	std::vector<Entity> entities1, std:
 			case
 			CollisionType::BOX_CIRCLE:
 			{
-				colPos += isCol ? boxCol1->pos : boxTrig1->pos;
-				otherColPos += otherIsCol ? circCol2->pos : circTrig2->pos;
-				float r = otherIsCol ? circCol2->radius : circTrig2->radius;
-				BoundingBox box = isCol ? Transform{ colPos, boxCol1->scale } : Transform{ colPos, boxTrig1->scale };
+				colPos1 += isCol1 ? boxCol1->pos : boxTrig1->pos;
+				colPos2 += isCol2 ? circCol2->pos : circTrig2->pos;
+				float r = isCol2 ? circCol2->radius : circTrig2->radius;
+				BoundingBox box = isCol1 ? Transform{colPos1, boxCol1->scale} : Transform{colPos1, boxTrig1->scale};
 
-				Vector2<float> closest = { std::clamp(otherColPos.x, box.left, box.right), std::clamp(otherColPos.y, box.bottom, box.top) };
-				Vector2<float> distance = otherColPos - closest;
+				Vector2<float> closest = {std::clamp(colPos2.x, box.left, box.right), std::clamp(colPos2.y, box.bottom, box.top)};
+				Vector2<float> distance = colPos2 - closest;
 
 				float distanceSquared = (distance.x * distance.x) + (distance.y * distance.y);
 				if (distanceSquared >= (r * r))
@@ -199,17 +201,17 @@ void SystemManager::Physics::ColliderUpdate(	std::vector<Entity> entities1, std:
 			case
 			CollisionType::BOX_BOX:
 			{
-				BoundingBox box = isCol ? Transform{ colPos, boxCol1->scale } : Transform{ colPos, boxTrig1->scale };
-				BoundingBox otherBox = otherIsCol ? Transform{ otherColPos, boxCol2->scale } : Transform{ otherColPos, boxTrig2->scale };
+				BoundingBox box = isCol1 ? Transform{colPos1, boxCol1->scale} : Transform{colPos1, boxTrig1->scale};
+				BoundingBox otherBox = isCol2 ? Transform{colPos2, boxCol2->scale} : Transform{colPos2, boxTrig2->scale};
 				if (!Overlapping(box, otherBox))
 					continue;
 			}
 			break;
 		}
 
-		collisions.insert({e1, e2});
+		collisions.insert(std::make_pair(e1,e2));
 
-		if (!isCol || !otherIsCol)
+		if (!isCol1 || !isCol2)
 			continue;
 
 		bool dynamic_dynamic = rb1 != nullptr && rb2 != nullptr;
@@ -222,7 +224,7 @@ void SystemManager::Physics::ColliderUpdate(	std::vector<Entity> entities1, std:
 			case
 			CollisionType::CIRCLE_CIRCLE:
 			{
-				Vector2<float> direction = Normalize(colPos - otherColPos);
+				Vector2<float> direction = Normalize(colPos1 - colPos2);
 				Vector2<float> displacement = (circCol1->radius + circCol2->radius) * direction;
 
 				if (dynamic_dynamic)
@@ -230,7 +232,7 @@ void SystemManager::Physics::ColliderUpdate(	std::vector<Entity> entities1, std:
 					float pValue = 2 * (DotProduct(rb1->vel, direction) - DotProduct(rb2->vel, direction)) / (rb1->mass + rb2->mass);
 					rb1->vel -= (pValue * rb2->mass * direction);
 					rb2->vel += (pValue * rb1->mass * direction);
-					tf2->pos = colPos - circCol1->pos - displacement / 2;
+					tf2->pos = colPos1 - circCol1->pos - displacement / 2;
 				}
 				else if (dynamic_static)
 				{
@@ -243,7 +245,7 @@ void SystemManager::Physics::ColliderUpdate(	std::vector<Entity> entities1, std:
 
 				}
 
-				tf1->pos = otherColPos - circCol2->pos + displacement / 2;
+				tf1->pos = colPos2 - circCol2->pos + displacement / 2;
 			}
 			break;
 
@@ -263,8 +265,8 @@ void SystemManager::Physics::ColliderUpdate(	std::vector<Entity> entities1, std:
 			case
 			CollisionType::BOX_BOX:
 			{
-				BoundingBox box = Transform{ colPos, boxCol1->scale };
-				BoundingBox otherBox = Transform{ otherColPos, boxCol2->scale };
+				BoundingBox box = Transform{ colPos1, boxCol1->scale };
+				BoundingBox otherBox = Transform{ colPos2, boxCol2->scale };
 				Transform tf = *tf1;
 				Transform otherTf = *tf2;
 

@@ -160,6 +160,7 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
+    <ClCompile Include="Engine\Math\QuadTree.cpp" />
     <ClCompile Include="Engine\Peripherals\Clock.cpp" />
     <ClCompile Include="Engine\Systems\AudioSystem.cpp" />
     <ClCompile Include="Engine\Core\ComponentManager.cpp" />
@@ -173,6 +174,7 @@
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="Engine\Components\Text.h" />
+    <ClInclude Include="Engine\Math\QuadTree.h" />
     <ClInclude Include="Engine\Misc\Concurrency.h" />
     <ClInclude Include="Engine\Systems\AudioSystem.h" />
     <ClInclude Include="Engine\Components\Collider.h" />
