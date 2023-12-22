@@ -20,10 +20,11 @@ class QuadTree
 public:
 	QuadTree(Transform transform);
 	bool Insert(Entity entity, BoundingBox box);
-	void Subdivide();
 	std::vector<Entity> Query(BoundingBox range);
 private:
+	void Subdivide();
 	bool InsertNode(Node node);
+
 	Transform transform;
 	BoundingBox box;
 	std::vector<Node> nodes;
