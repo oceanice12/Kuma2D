@@ -50,6 +50,9 @@ std::vector<Entity> QuadTree::Query(BoundingBox range)
 		if (range.Contains(node.pos))
 			found.push_back(node.entity);
 
+	if (northWest == nullptr)
+		return found;
+
 	std::vector<std::vector<Entity>> temp;
 	temp.push_back(northWest->Query(range));
 	temp.push_back(northEast->Query(range));
