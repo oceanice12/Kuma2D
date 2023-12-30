@@ -81,3 +81,31 @@ void QuadTree::Subdivide()
 	tf.pos = transform.pos + Vector2<float>{1, -1} * tf.scale / 2;
 	southEast = std::unique_ptr<QuadTree>(new QuadTree(tf));
 }
+
+void QuadTree::Remove(Entity e)
+{
+	for (int i = 0, s = nodes.size(); i < s; i++)
+	{
+		if (nodes[i].entity == e)
+		{
+			nodes[i] = nodes.back();
+			nodes.pop_back();
+		}
+	}
+
+	if (northWest == nullptr)
+		return;
+
+	northWest->Remove(e);
+	northEast->Remove(e);
+	southWest->Remove(e);
+	southEast->Remove(e);
+
+	if (northWest->nodes.empty() && northEast->nodes.empty() && southWest->nodes.empty() && southEast->nodes.empty())
+	{
+		northWest.reset();
+		northEast.reset();
+		southWest.reset();
+		southEast.reset();
+	}
+}

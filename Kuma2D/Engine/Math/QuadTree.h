@@ -21,6 +21,7 @@ public:
 	QuadTree(Transform transform);
 	bool Insert(Entity entity, BoundingBox box);
 	std::vector<Entity> Query(BoundingBox range);
+	void Remove(Entity entity);
 private:
 	void Subdivide();
 	bool InsertNode(Node node);

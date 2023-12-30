@@ -1,5 +1,4 @@
 #include <PhysicsSystem.h>
-#include <QuadTree.h>
 
 namespace SystemManager
 {
@@ -36,6 +35,10 @@ namespace SystemManager
 			static_cast<Signature>(ComponentFlag::TRANSFORM | ComponentFlag::BOX_TRIGGER),
 			static_cast<Signature>(ComponentFlag::TRANSFORM | ComponentFlag::CIRCLE_TRIGGER)
 		};
+
+		QuadTree quadtree{Transform{{0,0}, Vector2<float>(WORLD_SIZE)}};
+		std::vector<Entity> quadtreeInsertions;
+		std::vector<Entity> quadtreeRemovals;
 	}
 }
 
@@ -101,20 +104,31 @@ void SystemManager::Physics::ColliderUpdate(const std::vector<Entity> entities,
 	ComponentArray<CircleCollider>& cColliders, ComponentArray<BoxCollider>& bColliders,
 	ComponentArray<CircleTrigger>& cTriggers, ComponentArray<BoxTrigger>& bTriggers)
 {
-	// Build Quadtree
-	const Transform treetf{{0,0}, Vector2<float>(WORLD_SIZE)};
-	QuadTree qt{treetf};
-
-	for (Entity e : entities)
+	// Update quadtree
+	for (Entity e : quadtreeInsertions)
 	{
 		BoundingBox box{*transforms[e]};
-		qt.Insert(e, box);
+		quadtree.Insert(e, box);
 	}
+	for (Entity e : quadtreeRemovals)
+		quadtree.Remove(e);
+
+	quadtreeInsertions.clear();
+	quadtreeRemovals.clear();
 
 	for (Entity e1 : entities)
 	{
 		Transform* tf1 = transforms[e1];
-		std::vector<Entity> found = qt.Query(BoundingBox{*tf1});
+
+		// Update mobile colliders in quadtree
+		if (rigidbodies[e1] != nullptr)
+		{
+			quadtree.Remove(e1);
+			BoundingBox box{*tf1};
+			quadtree.Insert(e1, box);
+		}
+
+		std::vector<Entity> found = quadtree.Query(BoundingBox{*tf1});
 
 		for (Entity e2 : found)
 		{

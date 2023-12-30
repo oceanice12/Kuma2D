@@ -14,6 +14,7 @@
 #include <Collider.h>
 #include <Settings.h>
 #include <Clock.h>
+#include <QuadTree.h>
 
 namespace SystemManager
 {
@@ -33,5 +34,9 @@ namespace SystemManager
 		extern std::vector<Entity> rbEntities;
 		extern std::unordered_map<Entity, Index> rbEntityToIndex;
 		extern Signature systemRbSignature;
+
+		extern QuadTree quadtree;
+		extern std::vector<Entity> quadtreeInsertions;
+		extern std::vector<Entity> quadtreeRemovals;
 	}
 }
