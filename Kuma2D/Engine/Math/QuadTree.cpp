@@ -30,7 +30,8 @@ bool QuadTree::InsertNode(Node node)
 		return true;
 	}
 
-	Subdivide();
+	if (northWest == nullptr)
+		Subdivide();
 
 	if (northWest->InsertNode(node)) return true;
 	if (northEast->InsertNode(node)) return true;
@@ -40,28 +41,24 @@ bool QuadTree::InsertNode(Node node)
 	return false;
 }
 
-std::vector<Entity> QuadTree::Query(BoundingBox range)
+void QuadTree::Query(std::vector<Entity>& found, BoundingBox& range)
 {
-	std::vector<Entity> found;
 	if (!Overlapping(box, range))
-		return found;
+		return;
 
 	for (const auto& node : nodes)
 		if (range.Contains(node.pos))
 			found.push_back(node.entity);
 
 	if (northWest == nullptr)
-		return found;
+		return;
 
-	std::vector<std::vector<Entity>> temp;
-	temp.push_back(northWest->Query(range));
-	temp.push_back(northEast->Query(range));
-	temp.push_back(southWest->Query(range));
-	temp.push_back(southEast->Query(range));
-	for (const auto& v : temp)
-		found.insert(found.end(), v.begin(), v.end());
+	northWest->Query(found, range);
+	northEast->Query(found, range);
+	southWest->Query(found, range);
+	southEast->Query(found, range);
 
-	return found;
+	return;
 }
 
 void QuadTree::Subdivide()
@@ -84,7 +81,7 @@ void QuadTree::Subdivide()
 
 void QuadTree::Remove(Entity e)
 {
-	for (int i = 0, s = nodes.size(); i < s; i++)
+	for (int i = 0; i < nodes.size(); i++)
 	{
 		if (nodes[i].entity == e)
 		{

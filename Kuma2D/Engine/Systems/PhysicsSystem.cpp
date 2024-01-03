@@ -64,6 +64,17 @@ void SystemManager::Physics::Update(	ComponentArray<Transform>& transforms, Comp
 		threads.clear();
 	}
 
+	// Quadtree
+	for (Entity e : quadtreeInsertions)
+	{
+		BoundingBox box{*transforms[e]};
+		quadtree.Insert(e, box);
+	}
+	for (Entity e : quadtreeRemovals)
+		quadtree.Remove(e);
+
+	quadtreeInsertions.clear();
+	quadtreeRemovals.clear();
 
 
 	// Collisions
@@ -104,18 +115,6 @@ void SystemManager::Physics::ColliderUpdate(const std::vector<Entity> entities,
 	ComponentArray<CircleCollider>& cColliders, ComponentArray<BoxCollider>& bColliders,
 	ComponentArray<CircleTrigger>& cTriggers, ComponentArray<BoxTrigger>& bTriggers)
 {
-	// Update quadtree
-	for (Entity e : quadtreeInsertions)
-	{
-		BoundingBox box{*transforms[e]};
-		quadtree.Insert(e, box);
-	}
-	for (Entity e : quadtreeRemovals)
-		quadtree.Remove(e);
-
-	quadtreeInsertions.clear();
-	quadtreeRemovals.clear();
-
 	for (Entity e1 : entities)
 	{
 		Transform* tf1 = transforms[e1];
@@ -128,7 +127,9 @@ void SystemManager::Physics::ColliderUpdate(const std::vector<Entity> entities,
 			quadtree.Insert(e1, box);
 		}
 
-		std::vector<Entity> found = quadtree.Query(BoundingBox{*tf1});
+		std::vector<Entity> found;
+		BoundingBox range = BoundingBox{*tf1};
+		quadtree.Query(found, range);
 
 		for (Entity e2 : found)
 		{
@@ -295,14 +296,18 @@ void SystemManager::Physics::ColliderUpdate(const std::vector<Entity> entities,
 					if (static_static)
 						continue;
 
+					Rigidbody rb;
+
 					Vector2<float> vel = {0,0};
 					if (rb1 != nullptr)
 					{
 						vel = rb1->vel;
+						rb = *rb1;
 					}
 					else if (rb2 != nullptr)
 					{
 						vel = rb2->vel;
+						rb = *rb2;
 						std::swap(tf, otherTf);
 						std::swap(box, otherBox);
 					}
@@ -332,7 +337,7 @@ void SystemManager::Physics::ColliderUpdate(const std::vector<Entity> entities,
 							tf.pos.x = otherBox.left - tf.scale.x / 2;
 
 						//rb.acc.x = 0;
-						//rb.vel.x = 0;
+						rb.vel.x = 0;
 					}
 					else if (timeUntilCollision.y < timeUntilCollision.x)
 					{
@@ -342,13 +347,19 @@ void SystemManager::Physics::ColliderUpdate(const std::vector<Entity> entities,
 							tf.pos.y = otherBox.bottom - tf.scale.y / 2;
 
 						//rb.acc.y = 0;
-						//rb.vel.y = 0;
+						rb.vel.y = 0;
 					}
 
 					if (rb1 != nullptr)
+					{
 						*tf1 = tf;
+						*rb1 = rb;
+					}
 					else if (rb2 != nullptr)
+					{
 						*tf2 = tf;
+						*rb2 = rb;
+					}
 				}
 				break;
 			}

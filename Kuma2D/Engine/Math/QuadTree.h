@@ -4,7 +4,7 @@
 #include <vector>
 #include <Types.h>
 
-constexpr uint8_t CAPACITY = 4;
+constexpr uint8_t CAPACITY = 16;
 
 
 // A quadtree normally detects points only but to use it for collision detection all 4 corners of a collider must be stored in the quadtree
@@ -20,7 +20,7 @@ class QuadTree
 public:
 	QuadTree(Transform transform);
 	bool Insert(Entity entity, BoundingBox box);
-	std::vector<Entity> Query(BoundingBox range);
+	void Query(std::vector<Entity>& found, BoundingBox& range);
 	void Remove(Entity entity);
 private:
 	void Subdivide();
