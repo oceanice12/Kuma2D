@@ -10,7 +10,7 @@ public:
 	void AddEntity(Entity entity);
 	void RemoveEntity(Entity entity);
 
-	const std::vector<Entity>& GetEntities();
+	const std::vector<Entity>& GetEntities() { return entities; }
 private:
 	std::vector<Entity> entities;
 	std::unordered_map<Entity, Index> entityToIndex;

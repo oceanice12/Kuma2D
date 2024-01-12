@@ -21,8 +21,3 @@ void EntityArray::RemoveEntity(Entity entity)
 	entities.pop_back();
 	entities.shrink_to_fit();
 }
-
-const std::vector<Entity>& EntityArray::GetEntities()
-{
-	return entities;
-}
