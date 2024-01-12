@@ -224,6 +224,8 @@ void SystemManager::Physics::ColliderUpdate(const std::vector<Entity> entities,
 				case
 				CollisionType::BOX_BOX:
 				{
+					colPos1 += isCol1 ? boxCol1->pos : boxTrig1->pos;
+					colPos2 += isCol2 ? boxCol2->pos : boxTrig2->pos;
 					BoundingBox box = isCol1 ? Transform{colPos1, boxCol1->scale} : Transform{colPos1, boxTrig1->scale};
 					BoundingBox otherBox = isCol2 ? Transform{colPos2, boxCol2->scale} : Transform{colPos2, boxTrig2->scale};
 					if (!Overlapping(box, otherBox))
@@ -292,6 +294,7 @@ void SystemManager::Physics::ColliderUpdate(const std::vector<Entity> entities,
 					BoundingBox otherBox = Transform{colPos2, boxCol2->scale};
 					Transform tf = *tf1;
 					Transform otherTf = *tf2;
+					Vector2<float> colScale;
 
 					if (static_static)
 						continue;
@@ -303,11 +306,13 @@ void SystemManager::Physics::ColliderUpdate(const std::vector<Entity> entities,
 					{
 						vel = rb1->vel;
 						rb = *rb1;
+						colScale = boxCol1->scale;
 					}
 					else if (rb2 != nullptr)
 					{
 						vel = rb2->vel;
 						rb = *rb2;
+						colScale = boxCol2->scale;
 						std::swap(tf, otherTf);
 						std::swap(box, otherBox);
 					}
@@ -332,22 +337,22 @@ void SystemManager::Physics::ColliderUpdate(const std::vector<Entity> entities,
 					if (timeUntilCollision.x < timeUntilCollision.y)
 					{
 						if (dp.x > 0)
-							tf.pos.x = otherBox.right + tf.scale.x / 2;
+							tf.pos.x = otherBox.right + colScale.x / 2;
 						else if (dp.x < 0)
-							tf.pos.x = otherBox.left - tf.scale.x / 2;
+							tf.pos.x = otherBox.left - colScale.x / 2;
 
 						//rb.acc.x = 0;
-						rb.vel.x = 0;
+						//rb.vel.x = 0;
 					}
 					else if (timeUntilCollision.y < timeUntilCollision.x)
 					{
 						if (dp.y > 0)
-							tf.pos.y = otherBox.top + tf.scale.y / 2;
+							tf.pos.y = otherBox.top + colScale.y / 2;
 						else if (dp.y < 0)
-							tf.pos.y = otherBox.bottom - tf.scale.y / 2;
+							tf.pos.y = otherBox.bottom - colScale.y / 2;
 
 						//rb.acc.y = 0;
-						rb.vel.y = 0;
+						//rb.vel.y = 0;
 					}
 
 					if (rb1 != nullptr)
