@@ -2,7 +2,7 @@
 
 void Kuma2D::Init()
 {
-	srand(time(NULL));
+	srand(static_cast<uint32_t>(time(NULL)));
 
 	if (SDL_Init(SDL_INIT_EVERYTHING) < 0)
 	{

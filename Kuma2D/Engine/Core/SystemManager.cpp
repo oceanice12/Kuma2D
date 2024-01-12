@@ -78,7 +78,7 @@ SystemManager::Action SystemManager::UpdateEntityArray(std::vector<Entity>& enti
 	if ((signature & systemSignature) == systemSignature && !inArray)
 	{
 		entities.push_back(entity);
-		entityToIndex[entity] = entities.size() - 1;
+		entityToIndex[entity] = static_cast<Index>(entities.size() - 1);
 
 		return SystemManager::Action::ADDED;
 	}

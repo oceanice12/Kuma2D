@@ -36,8 +36,8 @@ inline void ComponentArray<T>::AddComponent(Entity entity)
 {
 	T component{};
 	components.push_back(component);
-	entityToIndex[entity] = (components.size() - 1);
-	indexToEntity[(components.size() - 1)] = entity;
+	entityToIndex[entity] = static_cast<Index>(components.size() - 1);
+	indexToEntity[static_cast<Index>(components.size() - 1)] = entity;
 }
 
 
@@ -51,7 +51,7 @@ template<typename T>
 inline void ComponentArray<T>::DeleteComponent(Entity entity)
 {
 	T movedComponent = *(components.end() - 1);
-	Index lastIndex = components.size() - 1;
+	Index lastIndex = static_cast<Index>(components.size() - 1);
 	Entity movedEntity = indexToEntity[lastIndex];
 	Index index = entityToIndex[entity];
 

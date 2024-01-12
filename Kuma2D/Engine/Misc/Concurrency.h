@@ -15,7 +15,7 @@ namespace MultiThread
 inline std::vector<std::vector<Entity>> MultiThread::ParallelSplit(const std::vector<Entity>& entities, int splits)
 {
 	std::vector<std::vector<Entity>> subEntities;
-	for (size_t i = 0, size = entities.size(), subSize = std::ceil((double)size / splits); i < size; i += subSize)
+	for (size_t i = 0, size = entities.size(), subSize = static_cast<size_t>(std::ceil(static_cast<double>(size / splits))); i < size; i += subSize)
 		subEntities.push_back( { entities.begin() + i, entities.begin() + std::min<size_t>(i + subSize, size) });
 
 	return subEntities;
