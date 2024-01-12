@@ -146,3 +146,8 @@ void Kuma2D::SetResolution(Vector2<int> resolution)
 {
 	SystemManager::Render::SetResolution(resolution);
 }
+
+void Kuma2D::SetWorldSize(Vector2<int> size)
+{
+	WORLD_SIZE = size;
+}

@@ -2,7 +2,14 @@
 
 namespace SystemManager
 {
-	void UpdateEntityArray(std::vector<Entity>& entities, std::unordered_map<Entity, Index>& entityToIndex,
+	enum class Action
+	{
+		REMOVED = -1,
+		ADDED = 1,
+		NONE = 0
+	};
+
+	Action UpdateEntityArray(std::vector<Entity>& entities, std::unordered_map<Entity, Index>& entityToIndex,
 		Signature systemSignature, Entity entity, Signature signature);
 }
 
@@ -43,7 +50,19 @@ void SystemManager::UpdateEntityArrays(Entity entity, Signature signature)
 
 	for (Signature s : Physics::systemColSignatures)
 	{
-		UpdateEntityArray(Physics::colEntities, Physics::colEntityToIndex, s, entity, signature);
+		Action action = UpdateEntityArray(Physics::colEntities, Physics::colEntityToIndex, s, entity, signature);
+
+		switch (action)
+		{
+		case Action::REMOVED:
+			Physics::quadtreeRemovals.push_back(entity);
+			break;
+
+		case Action::ADDED:
+			Physics::quadtreeInsertions.push_back(entity);
+			break;
+		}
+
 		if ((signature & s) == s)
 			break;
 	}
@@ -51,7 +70,7 @@ void SystemManager::UpdateEntityArrays(Entity entity, Signature signature)
 
 
 
-void SystemManager::UpdateEntityArray(std::vector<Entity>& entities, std::unordered_map<Entity, Index>& entityToIndex, Signature systemSignature, Entity entity, Signature signature)
+SystemManager::Action SystemManager::UpdateEntityArray(std::vector<Entity>& entities, std::unordered_map<Entity, Index>& entityToIndex, Signature systemSignature, Entity entity, Signature signature)
 {
 	bool inArray = entityToIndex.find(entity) != entityToIndex.end();
 
@@ -60,6 +79,8 @@ void SystemManager::UpdateEntityArray(std::vector<Entity>& entities, std::unorde
 	{
 		entities.push_back(entity);
 		entityToIndex[entity] = entities.size() - 1;
+
+		return SystemManager::Action::ADDED;
 	}
 	// Remove entity from system array
 	else if ((signature & systemSignature) != systemSignature && inArray)
@@ -74,5 +95,9 @@ void SystemManager::UpdateEntityArray(std::vector<Entity>& entities, std::unorde
 		entityToIndex.erase(entity);
 		entities.pop_back();
 		entities.shrink_to_fit();
+
+		return SystemManager::Action::REMOVED;
 	}
+
+	return SystemManager::Action::NONE;
 }

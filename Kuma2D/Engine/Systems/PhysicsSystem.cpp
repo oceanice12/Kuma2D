@@ -4,12 +4,22 @@ namespace SystemManager
 {
 	namespace Physics
 	{
-		void RigidbodyUpdate(std::vector<Entity> entities, ComponentArray<Transform>& transforms, ComponentArray<Rigidbody>& rigidbodies);
+		void RigidbodyUpdate(const std::vector<Entity> entities, ComponentArray<Transform>& transforms, ComponentArray<Rigidbody>& rigidbodies);
 
-		void ColliderUpdate(	std::vector<Entity> entities1, std::vector<Entity> entities2, 
-								ComponentArray<Transform>& transforms, ComponentArray<Rigidbody>& rigidbodies,
-								ComponentArray<CircleCollider>& cColliders, ComponentArray<BoxCollider>& bColliders,
-								ComponentArray<CircleTrigger>& cTriggers, ComponentArray<BoxTrigger>& bTriggers);
+		void ColliderUpdate(const std::vector<Entity> entities,
+			ComponentArray<Transform>& transforms, ComponentArray<Rigidbody>& rigidbodies,
+			ComponentArray<CircleCollider>& cColliders, ComponentArray<BoxCollider>& bColliders,
+			ComponentArray<CircleTrigger>& cTriggers, ComponentArray<BoxTrigger>& bTriggers);
+
+
+		enum class CollisionType
+		{
+			NONE,
+			CIRCLE_CIRCLE,
+			CIRCLE_BOX,
+			BOX_CIRCLE,
+			BOX_BOX
+		};
 
 		std::unordered_multimap<Entity, Entity> collisions;
 		std::vector<Entity> colEntities;
@@ -25,9 +35,12 @@ namespace SystemManager
 			static_cast<Signature>(ComponentFlag::TRANSFORM | ComponentFlag::BOX_TRIGGER),
 			static_cast<Signature>(ComponentFlag::TRANSFORM | ComponentFlag::CIRCLE_TRIGGER)
 		};
+
+		QuadTree quadtree{Transform{{0,0}, Vector2<float>(WORLD_SIZE)}};
+		std::vector<Entity> quadtreeInsertions;
+		std::vector<Entity> quadtreeRemovals;
 	}
 }
-
 
 
 void SystemManager::Physics::Update(	ComponentArray<Transform>& transforms, ComponentArray<Rigidbody>& rigidbodies, 
@@ -51,24 +64,29 @@ void SystemManager::Physics::Update(	ComponentArray<Transform>& transforms, Comp
 		threads.clear();
 	}
 
+	// Quadtree
+	for (Entity e : quadtreeInsertions)
+	{
+		BoundingBox box{*transforms[e]};
+		quadtree.Insert(e, box);
+	}
+	for (Entity e : quadtreeRemovals)
+		quadtree.Remove(e);
+
+	quadtreeInsertions.clear();
+	quadtreeRemovals.clear();
 
 
 	// Collisions
 	{
 		collisions.clear();
 
-		std::queue<Entity> colUpdates;
-		for (auto col : colEntities)
-			colUpdates.push(col);
-
-		std::mutex queueMutex;
-		std::vector<Entity> busyEntities;
-		ColliderUpdate(colEntities, colEntities, transforms, rigidbodies, cColliders, bColliders, cTriggers, bTriggers);
+		ColliderUpdate(colEntities, transforms, rigidbodies, cColliders, bColliders, cTriggers, bTriggers);
 	}
 }
 
 
-void SystemManager::Physics::RigidbodyUpdate(std::vector<Entity> entities, ComponentArray<Transform>& transforms, ComponentArray<Rigidbody>& rigidbodies)
+void SystemManager::Physics::RigidbodyUpdate(const std::vector<Entity> entities, ComponentArray<Transform>& transforms, ComponentArray<Rigidbody>& rigidbodies)
 {
 	for (Entity e : entities)
 	{
@@ -88,245 +106,268 @@ void SystemManager::Physics::RigidbodyUpdate(std::vector<Entity> entities, Compo
 	}
 }
 
-void SystemManager::Physics::ColliderUpdate(	std::vector<Entity> entities1, std::vector<Entity> entities2,
-												ComponentArray<Transform>& transforms, ComponentArray<Rigidbody>& rigidbodies,
-												ComponentArray<CircleCollider>& cColliders, ComponentArray<BoxCollider>& bColliders,
-												ComponentArray<CircleTrigger>& cTriggers, ComponentArray<BoxTrigger>& bTriggers)
+
+
+
+
+void SystemManager::Physics::ColliderUpdate(const std::vector<Entity> entities,
+	ComponentArray<Transform>& transforms, ComponentArray<Rigidbody>& rigidbodies,
+	ComponentArray<CircleCollider>& cColliders, ComponentArray<BoxCollider>& bColliders,
+	ComponentArray<CircleTrigger>& cTriggers, ComponentArray<BoxTrigger>& bTriggers)
 {
-	for (Entity e1 : entities1)
-	for (Entity e2 : entities2)
+	for (Entity e1 : entities)
 	{
-		if (e1 == e2)
-			continue;
-
 		Transform* tf1 = transforms[e1];
-		Transform* tf2 = transforms[e2];
 
-		if (Distance(tf1->pos, tf2->pos) > Magnitude(tf1->scale + tf2->scale))
-			continue;
-
-
-		Rigidbody* rb1 = rigidbodies[e1];
-		Rigidbody* rb2 = rigidbodies[e2];
-
-		CircleCollider* circCol1 = cColliders[e1];
-		BoxCollider* boxCol1 = bColliders[e1];
-		CircleTrigger* circTrig1 = cTriggers[e1];
-		BoxTrigger* boxTrig1 = bTriggers[e1];
-
-		CircleCollider* circCol2 = cColliders[e2];
-		BoxCollider* boxCol2 = bColliders[e2];
-		CircleTrigger* circTrig2 = cTriggers[e2];
-		BoxTrigger* boxTrig2 = bTriggers[e2];
-
-		Vector2<float> colPos = tf1->pos;
-		Vector2<float> otherColPos = tf2->pos;
-
-		enum class CollisionType
+		// Update mobile colliders in quadtree
+		if (rigidbodies[e1] != nullptr)
 		{
-			NONE,
-			CIRCLE_CIRCLE,
-			CIRCLE_BOX,
-			BOX_CIRCLE,
-			BOX_BOX
-		};
-
-		CollisionType type = CollisionType::NONE;
-		if ((circCol1 != nullptr || circTrig1 != nullptr) && (circCol2 != nullptr || circTrig2 != nullptr))
-			type = CollisionType::CIRCLE_CIRCLE;
-		else if ((circCol1 != nullptr || circTrig1 != nullptr) && (boxCol2 != nullptr || boxTrig2 != nullptr))
-			type = CollisionType::CIRCLE_BOX;
-		else if ((boxCol1 != nullptr || boxTrig1 != nullptr) && (circCol2 != nullptr || circTrig2 != nullptr))
-			type = CollisionType::BOX_CIRCLE;
-		else if ((boxCol1 != nullptr || boxTrig1 != nullptr) && (boxCol2 != nullptr || boxTrig2 != nullptr))
-			type = CollisionType::BOX_BOX;
-
-		bool isCol = (circCol1 != nullptr || boxCol1 != nullptr);
-		bool otherIsCol = (circCol2 != nullptr || boxCol2 != nullptr);
-
-		// Collision Detection
-		switch (type)
-		{
-			case
-			CollisionType::CIRCLE_CIRCLE:
-			{
-				float r1 = isCol ? circCol1->radius : circTrig1->radius;
-				float r2 = otherIsCol ? circCol2->radius : circTrig2->radius;
-				colPos = isCol ? circCol1->pos : circTrig1->pos;
-				colPos += tf1->pos;
-				otherColPos = otherIsCol ? circCol2->pos : circTrig2->pos;
-				otherColPos += tf2->pos;
-				if (Distance(colPos, otherColPos) >= r1 + r2)
-					continue;
-			}
-			break;
-
-
-			case
-			CollisionType::CIRCLE_BOX:
-			{
-				colPos += isCol ? circCol1->pos : circTrig1->pos;
-				otherColPos += otherIsCol ? boxCol2->pos : boxTrig2->pos;
-				float r = isCol ? circCol1->radius : circTrig1->radius;
-				BoundingBox box = otherIsCol ? Transform{ otherColPos, boxCol2->scale } : Transform{ otherColPos, boxTrig2->scale };
-
-				Vector2<float> closest = { std::clamp(colPos.x, box.left, box.right), std::clamp(colPos.y, box.bottom, box.top) };
-				Vector2<float> distance = colPos - closest;
-
-				float distanceSquared = (distance.x * distance.x) + (distance.y * distance.y);
-				if (distanceSquared >= (r * r))
-					continue;
-			}
-			break;
-
-			case
-			CollisionType::BOX_CIRCLE:
-			{
-				colPos += isCol ? boxCol1->pos : boxTrig1->pos;
-				otherColPos += otherIsCol ? circCol2->pos : circTrig2->pos;
-				float r = otherIsCol ? circCol2->radius : circTrig2->radius;
-				BoundingBox box = isCol ? Transform{ colPos, boxCol1->scale } : Transform{ colPos, boxTrig1->scale };
-
-				Vector2<float> closest = { std::clamp(otherColPos.x, box.left, box.right), std::clamp(otherColPos.y, box.bottom, box.top) };
-				Vector2<float> distance = otherColPos - closest;
-
-				float distanceSquared = (distance.x * distance.x) + (distance.y * distance.y);
-				if (distanceSquared >= (r * r))
-					continue;
-			}
-			break;
-
-			case
-			CollisionType::BOX_BOX:
-			{
-				BoundingBox box = isCol ? Transform{ colPos, boxCol1->scale } : Transform{ colPos, boxTrig1->scale };
-				BoundingBox otherBox = otherIsCol ? Transform{ otherColPos, boxCol2->scale } : Transform{ otherColPos, boxTrig2->scale };
-				if (!Overlapping(box, otherBox))
-					continue;
-			}
-			break;
+			quadtree.Remove(e1);
+			BoundingBox box{*tf1};
+			quadtree.Insert(e1, box);
 		}
 
-		collisions.insert({e1, e2});
+		std::vector<Entity> found;
+		BoundingBox range = BoundingBox{*tf1};
+		quadtree.Query(found, range);
 
-		if (!isCol || !otherIsCol)
-			continue;
-
-		bool dynamic_dynamic = rb1 != nullptr && rb2 != nullptr;
-		bool dynamic_static = (rb1 != nullptr && rb2 == nullptr) || (rb1 == nullptr && rb2 != nullptr);
-		bool static_static = rb1 == nullptr && rb2 == nullptr;
-
-		// Collisions Resolution
-		switch (type)
+		for (Entity e2 : found)
 		{
-			case
-			CollisionType::CIRCLE_CIRCLE:
+			if (e1 == e2)
+				continue;
+
+			Transform* tf2 = transforms[e2];
+
+			Rigidbody* rb1 = rigidbodies[e1];
+			Rigidbody* rb2 = rigidbodies[e2];
+
+			CircleCollider* circCol1 = cColliders[e1];
+			BoxCollider* boxCol1 = bColliders[e1];
+			CircleTrigger* circTrig1 = cTriggers[e1];
+			BoxTrigger* boxTrig1 = bTriggers[e1];
+
+			CircleCollider* circCol2 = cColliders[e2];
+			BoxCollider* boxCol2 = bColliders[e2];
+			CircleTrigger* circTrig2 = cTriggers[e2];
+			BoxTrigger* boxTrig2 = bTriggers[e2];
+
+
+
+
+			CollisionType type = CollisionType::NONE;
+			if ((circCol1 != nullptr || circTrig1 != nullptr) && (circCol2 != nullptr || circTrig2 != nullptr))
+				type = CollisionType::CIRCLE_CIRCLE;
+			else if ((circCol1 != nullptr || circTrig1 != nullptr) && (boxCol2 != nullptr || boxTrig2 != nullptr))
+				type = CollisionType::CIRCLE_BOX;
+			else if ((boxCol1 != nullptr || boxTrig1 != nullptr) && (circCol2 != nullptr || circTrig2 != nullptr))
+				type = CollisionType::BOX_CIRCLE;
+			else if ((boxCol1 != nullptr || boxTrig1 != nullptr) && (boxCol2 != nullptr || boxTrig2 != nullptr))
+				type = CollisionType::BOX_BOX;
+
+
+			Vector2<float> colPos1 = tf1->pos;
+			Vector2<float> colPos2 = tf2->pos;
+			bool isCol1 = (circCol1 != nullptr || boxCol1 != nullptr);
+			bool isCol2 = (circCol2 != nullptr || boxCol2 != nullptr);
+
+			switch (type)
 			{
-				Vector2<float> direction = Normalize(colPos - otherColPos);
-				Vector2<float> displacement = (circCol1->radius + circCol2->radius) * direction;
-
-				if (dynamic_dynamic)
+				case
+				CollisionType::CIRCLE_CIRCLE:
 				{
-					float pValue = 2 * (DotProduct(rb1->vel, direction) - DotProduct(rb2->vel, direction)) / (rb1->mass + rb2->mass);
-					rb1->vel -= (pValue * rb2->mass * direction);
-					rb2->vel += (pValue * rb1->mass * direction);
-					tf2->pos = colPos - circCol1->pos - displacement / 2;
-				}
-				else if (dynamic_static)
-				{
-					Rigidbody* rb = rb1 != nullptr ? rb1 : rb2;
-					float pValue = 2 * (DotProduct(rb->vel, direction)) / (rb->mass);
-					rb->vel -= (pValue * rb->mass * direction);
-				}
-				else if (static_static)
-				{
+					float r1 = isCol1 ? circCol1->radius : circTrig1->radius;
+					float r2 = isCol2 ? circCol2->radius : circTrig2->radius;
 
-				}
+					colPos1 += isCol1 ? circCol1->pos : circTrig1->pos;
+					colPos2 += isCol2 ? circCol2->pos : circTrig2->pos;
 
-				tf1->pos = otherColPos - circCol2->pos + displacement / 2;
+					if (Distance(colPos1, colPos2) >= r1 + r2)
+						continue;
+				}
+				break;
+
+
+				case
+				CollisionType::CIRCLE_BOX:
+				{
+					colPos1 += isCol1 ? circCol1->pos : circTrig1->pos;
+					colPos2 += isCol2 ? boxCol2->pos : boxTrig2->pos;
+					float r = isCol1 ? circCol1->radius : circTrig1->radius;
+					BoundingBox box = isCol2 ? Transform{colPos2, boxCol2->scale} : Transform{colPos2, boxTrig2->scale};
+
+					Vector2<float> closest = {std::clamp(colPos1.x, box.left, box.right), std::clamp(colPos1.y, box.bottom, box.top)};
+					Vector2<float> distance = colPos1 - closest;
+
+					float distanceSquared = (distance.x * distance.x) + (distance.y * distance.y);
+					if (distanceSquared >= (r * r))
+						continue;
+				}
+				break;
+
+				case
+				CollisionType::BOX_CIRCLE:
+				{
+					colPos1 += isCol1 ? boxCol1->pos : boxTrig1->pos;
+					colPos2 += isCol2 ? circCol2->pos : circTrig2->pos;
+					float r = isCol2 ? circCol2->radius : circTrig2->radius;
+					BoundingBox box = isCol1 ? Transform{colPos1, boxCol1->scale} : Transform{colPos1, boxTrig1->scale};
+
+					Vector2<float> closest = {std::clamp(colPos2.x, box.left, box.right), std::clamp(colPos2.y, box.bottom, box.top)};
+					Vector2<float> distance = colPos2 - closest;
+
+					float distanceSquared = (distance.x * distance.x) + (distance.y * distance.y);
+					if (distanceSquared >= (r * r))
+						continue;
+				}
+				break;
+
+				case
+				CollisionType::BOX_BOX:
+				{
+					colPos1 += isCol1 ? boxCol1->pos : boxTrig1->pos;
+					colPos2 += isCol2 ? boxCol2->pos : boxTrig2->pos;
+					BoundingBox box = isCol1 ? Transform{colPos1, boxCol1->scale} : Transform{colPos1, boxTrig1->scale};
+					BoundingBox otherBox = isCol2 ? Transform{colPos2, boxCol2->scale} : Transform{colPos2, boxTrig2->scale};
+					if (!Overlapping(box, otherBox))
+						continue;
+				}
+				break;
 			}
-			break;
 
-			case
-			CollisionType::CIRCLE_BOX:
+			collisions.insert(std::make_pair(e1, e2));
+
+			if (!isCol1 || !isCol2)
+				continue;
+
+			bool dynamic_dynamic = rb1 != nullptr && rb2 != nullptr;
+			bool dynamic_static = (rb1 != nullptr && rb2 == nullptr) || (rb1 == nullptr && rb2 != nullptr);
+			bool static_static = rb1 == nullptr && rb2 == nullptr;
+
+			// Collisions Resolution
+			switch (type)
 			{
+				case
+				CollisionType::CIRCLE_CIRCLE:
+				{
+					Vector2<float> direction = Normalize(colPos1 - colPos2);
+					Vector2<float> displacement = (circCol1->radius + circCol2->radius) * direction;
+
+					if (dynamic_dynamic)
+					{
+						float pValue = 2 * (DotProduct(rb1->vel, direction) - DotProduct(rb2->vel, direction)) / (rb1->mass + rb2->mass);
+						rb1->vel -= (pValue * rb2->mass * direction);
+						rb2->vel += (pValue * rb1->mass * direction);
+						tf2->pos = colPos1 - circCol1->pos - displacement / 2;
+					}
+					else if (dynamic_static)
+					{
+						Rigidbody* rb = rb1 != nullptr ? rb1 : rb2;
+						float pValue = 2 * (DotProduct(rb->vel, direction)) / (rb->mass);
+						rb->vel -= (pValue * rb->mass * direction);
+					}
+					else if (static_static)
+					{
+
+					}
+
+					tf1->pos = colPos2 - circCol2->pos + displacement / 2;
+				}
+				break;
+
+				case
+				CollisionType::CIRCLE_BOX:
+				{
+				}
+				break;
+
+				case
+				CollisionType::BOX_CIRCLE:
+				{
+				}
+				break;
+
+
+				case
+				CollisionType::BOX_BOX:
+				{
+					BoundingBox box = Transform{colPos1, boxCol1->scale};
+					BoundingBox otherBox = Transform{colPos2, boxCol2->scale};
+					Transform tf = *tf1;
+					Transform otherTf = *tf2;
+					Vector2<float> colScale;
+
+					if (static_static)
+						continue;
+
+					Rigidbody rb;
+
+					Vector2<float> vel = {0,0};
+					if (rb1 != nullptr)
+					{
+						vel = rb1->vel;
+						rb = *rb1;
+						colScale = boxCol1->scale;
+					}
+					else if (rb2 != nullptr)
+					{
+						vel = rb2->vel;
+						rb = *rb2;
+						colScale = boxCol2->scale;
+						std::swap(tf, otherTf);
+						std::swap(box, otherBox);
+					}
+
+					Vector2<float> prevPos = tf.pos - vel * 1;
+
+					Vector2<float> dp = {0,0};
+					if (prevPos.x < otherTf.pos.x)
+						dp.x = otherBox.left - box.right;
+					else if (prevPos.x > otherTf.pos.x)
+						dp.x = otherBox.right - box.left;
+
+					if (prevPos.y < otherTf.pos.y)
+						dp.y = otherBox.bottom - box.top;
+					else if (prevPos.y > otherTf.pos.y)
+						dp.y = otherBox.top - box.bottom;
+
+
+					Vector2<float> timeUntilCollision = {vel.x != 0 ? std::abs(dp.x / vel.x) : std::numeric_limits<float>::infinity(),
+															vel.y != 0 ? std::abs(dp.y / vel.y) : std::numeric_limits<float>::infinity()};
+
+					if (timeUntilCollision.x < timeUntilCollision.y)
+					{
+						if (dp.x > 0)
+							tf.pos.x = otherBox.right + colScale.x / 2;
+						else if (dp.x < 0)
+							tf.pos.x = otherBox.left - colScale.x / 2;
+
+						//rb.acc.x = 0;
+						//rb.vel.x = 0;
+					}
+					else if (timeUntilCollision.y < timeUntilCollision.x)
+					{
+						if (dp.y > 0)
+							tf.pos.y = otherBox.top + colScale.y / 2;
+						else if (dp.y < 0)
+							tf.pos.y = otherBox.bottom - colScale.y / 2;
+
+						//rb.acc.y = 0;
+						//rb.vel.y = 0;
+					}
+
+					if (rb1 != nullptr)
+					{
+						*tf1 = tf;
+						*rb1 = rb;
+					}
+					else if (rb2 != nullptr)
+					{
+						*tf2 = tf;
+						*rb2 = rb;
+					}
+				}
+				break;
 			}
-			break;
-
-			case
-			CollisionType::BOX_CIRCLE:
-			{
-			}
-			break;
-
-
-			case
-			CollisionType::BOX_BOX:
-			{
-				BoundingBox box = Transform{ colPos, boxCol1->scale };
-				BoundingBox otherBox = Transform{ otherColPos, boxCol2->scale };
-				Transform tf = *tf1;
-				Transform otherTf = *tf2;
-
-				if (static_static)
-					continue;
-
-				Vector2<float> vel = { 0,0 };
-				if (rb1 != nullptr)
-				{
-					vel = rb1->vel;
-				}
-				else if (rb2 != nullptr)
-				{
-					vel = rb2->vel;
-					std::swap(tf, otherTf);
-					std::swap(box, otherBox);
-				}
-
-				Vector2<float> prevPos = tf.pos - vel * 1;
-
-				Vector2<float> dp = { 0,0 };
-				if (prevPos.x < otherTf.pos.x)
-					dp.x = otherBox.left - box.right;
-				else if (prevPos.x > otherTf.pos.x)
-					dp.x = otherBox.right - box.left;
-
-				if (prevPos.y < otherTf.pos.y)
-					dp.y = otherBox.bottom - box.top;
-				else if (prevPos.y > otherTf.pos.y)
-					dp.y = otherBox.top - box.bottom;
-
-
-				Vector2<float> timeUntilCollision = { vel.x != 0 ? std::abs(dp.x / vel.x) : std::numeric_limits<float>::infinity(),
-														vel.y != 0 ? std::abs(dp.y / vel.y) : std::numeric_limits<float>::infinity() };
-
-				if (timeUntilCollision.x < timeUntilCollision.y)
-				{
-					if (dp.x > 0)
-						tf.pos.x = otherBox.right + tf.scale.x / 2;
-					else if (dp.x < 0)
-						tf.pos.x = otherBox.left - tf.scale.x / 2;
-
-					//rb.acc.x = 0;
-					//rb.vel.x = 0;
-				}
-				else if (timeUntilCollision.y < timeUntilCollision.x)
-				{
-					if (dp.y > 0)
-						tf.pos.y = otherBox.top + tf.scale.y / 2;
-					else if (dp.y < 0)
-						tf.pos.y = otherBox.bottom - tf.scale.y / 2;
-
-					//rb.acc.y = 0;
-					//rb.vel.y = 0;
-				}
-
-				if (rb1 != nullptr)
-					*tf1 = tf;
-				else if (rb2 != nullptr)
-					*tf2 = tf;
-			}
-			break;
 		}
 	}
 }

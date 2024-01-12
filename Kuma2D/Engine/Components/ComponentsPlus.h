@@ -18,6 +18,11 @@ struct BoundingBox
 		top = tf.pos.y + tf.scale.y / 2;
 		bottom = tf.pos.y - tf.scale.y / 2;
 	}
+
+	bool Contains(Vector2<float> point)
+	{
+		return point.x > left && point.x < right && point.y < top && point.y > bottom;
+	}
 };
 
 inline bool Overlapping(BoundingBox b1, BoundingBox b2)
