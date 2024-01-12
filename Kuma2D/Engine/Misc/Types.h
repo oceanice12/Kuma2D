@@ -11,10 +11,12 @@
 #include <Text.h>
 
 
-using Entity = std::uint16_t;
-const Entity MAX_ENTITIES = INT16_MAX;
+//using Float = float;
 
-using Index = std::uint16_t;
+using Entity = std::uint32_t;
+constexpr Entity MAX_ENTITIES = UINT32_MAX;
+
+using Index = std::uint32_t;
 
 using Signature = std::uint8_t;
 
