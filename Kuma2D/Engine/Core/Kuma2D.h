@@ -78,6 +78,7 @@ namespace Kuma2D
 
 	void							Camera							(Entity entity);
 	Vector2<float>					ScreenToWorldPos				(Vector2<int> screenPos);
+	void							SetWorldSize					(Vector2<int> size);
 
 	const Sprite&					GetSprite						(std::string path);
 	TTF_Font*						GetFont							(std::string path);
