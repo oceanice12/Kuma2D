@@ -165,6 +165,7 @@
     <ClCompile Include="Engine\Systems\AudioSystem.cpp" />
     <ClCompile Include="Engine\Core\ComponentManager.cpp" />
     <ClCompile Include="Engine\Core\EntityManager.cpp" />
+    <ClCompile Include="Engine\Systems\NetworkSystem.cpp" />
     <ClCompile Include="Engine\Systems\PhysicsSystem.cpp" />
     <ClCompile Include="Engine\Core\SystemManager.cpp" />
     <ClCompile Include="Engine\Peripherals\Input.cpp" />
@@ -186,6 +187,7 @@
     <ClInclude Include="Engine\Core\ComponentManager.h" />
     <ClInclude Include="Engine\Core\EntityManager.h" />
     <ClInclude Include="Engine\Misc\Macros.h" />
+    <ClInclude Include="Engine\Systems\NetworkSystem.h" />
     <ClInclude Include="Engine\Systems\PhysicsSystem.h" />
     <ClInclude Include="Engine\Core\SystemManager.h" />
     <ClInclude Include="Engine\Peripherals\Clock.h" />

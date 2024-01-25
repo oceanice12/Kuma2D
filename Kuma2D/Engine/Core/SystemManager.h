@@ -6,6 +6,7 @@
 #include <RenderSystem.h>
 #include <PhysicsSystem.h>
 #include <AudioSystem.h>
+#include <NetworkSystem.h>
 
 namespace SystemManager
 {

@@ -151,3 +151,8 @@ void Kuma2D::SetWorldSize(Vector2<int> size)
 {
 	WORLD_SIZE = size;
 }
+
+void Kuma2D::InitNetwork(bool host)
+{
+	SystemManager::Network::Init(host);
+}

@@ -67,6 +67,8 @@ namespace Kuma2D
 	void UpdateSystems();
 	void Quit();
 
+	void InitNetwork(bool host);
+
 	Entity							CreateEntity					();
 	Entity							CreateEntity					(Signature signature);
 	Entity							CreateEntity					(ComponentFlag flag);
