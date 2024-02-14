@@ -19,7 +19,10 @@ namespace Input
 		void Update();
 		void Event(const SDL_Event& event);
 
+		// All keys pressed down in a given tick. Resets every tick.
 		std::unordered_map<uint8_t, bool> keyboardDown;
+
+		// Keyboard state. 1 = down, 0 = up.
 		const uint8_t* keyboard;
 	}
 

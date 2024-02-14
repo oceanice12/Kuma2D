@@ -4,11 +4,10 @@ namespace SystemManager
 {
 	namespace Network
 	{
-		const char* DEFAULT_PORT{"2800"};
-
 		namespace Client
 		{
 			SOCKET sock = INVALID_SOCKET;
+			uint16_t id = 0;
 			void Recieve();
 			void Send();
 			void Connect();
@@ -19,14 +18,17 @@ namespace SystemManager
 			std::string addr;
 			std::string port;
 			SOCKET listenSocket = INVALID_SOCKET;
+
+			std::vector<User*> users;
+			uint16_t userCounter = 1;
+			uint8_t maxUserCount = 9;
+
 			void Init();
-			void Recieve();
-			void Send();
+			void Recieve(User* user);
+			void Send(User* user);
 			void Accept();
 		}
-
-		std::vector<User*> users;
-		int userCounter = 0;
+		
 
 		std::vector<std::thread> threads;
 
@@ -36,10 +38,7 @@ namespace SystemManager
 }
 
 
-using namespace SystemManager;
-
-
-void Network::Init(bool host)
+void SystemManager::Network::Init(bool host)
 {
 	if (initialized)
 		return;
@@ -69,7 +68,7 @@ void Network::Init(bool host)
 	std::atexit(SystemManager::Network::Cleanup);
 }
 
-void Network::Client::Connect()
+void SystemManager::Network::Client::Connect()
 {
 	int iResult;
 
@@ -142,17 +141,60 @@ void Network::Client::Connect()
 	threads.push_back(std::move(t2));
 }
 
-void Network::Client::Recieve()
+void SystemManager::Network::Client::Recieve()
 {
+	char recvbuf[DEFAULT_BUFLEN];
+	int iResult;
+	std::string message;
 
+	do
+	{
+		iResult = recv(sock, recvbuf, DEFAULT_BUFLEN, NULL);
+		if (iResult > 0)
+		{
+			message = recvbuf;
+			message.resize(iResult);
+
+			if (iResult == 1)
+			{
+				Client::id = atoi(message.c_str());
+				std::cout << "Client ID: " << message;
+				continue;
+			}
+		}
+		else if (iResult == 0)
+			std::cout << "Connection closed..." << std::endl;
+		else
+			std::cout << "recv failed: " << WSAGetLastError() << std::endl;
+	} while (iResult > 0);
 }
 
-void Network::Client::Send()
+void SystemManager::Network::Client::Send()
 {
+	// Packet structure
+	/*
+	* uint16 (2 bytes) user id
+	* int (4 bytes) keyboard array length
+	* keyboard array
+	* 
+	* 
+	* 
+	*/
 
+
+	int32_t keyboardLength = 0;
+	const uint8_t* keyboard = SDL_GetKeyboardState(&keyboardLength);
+
+	Packet packet;
+	packet.Add<int16_t>(Client::id);
+	packet.Add<int32_t>(keyboardLength);
+	for (int i = 0, s = keyboardLength; i < s; i++)
+		packet.Add<uint8_t>(keyboard[i]);
+
+	packet.Send(Client::sock);
 }
 
-void Network::Server::Init()
+void SystemManager::Network::Server::Init()
 {
 	int iResult;
 
@@ -242,19 +284,16 @@ void Network::Server::Init()
 
 	std::thread t1{&Accept};
 	threads.push_back(std::move(t1));
-
-	std::thread t2{&Recieve};
-	threads.push_back(std::move(t2));
-
-	std::thread t3{&Send};
-	threads.push_back(std::move(t3));
 }
 
-void Network::Server::Accept()
+void SystemManager::Network::Server::Accept()
 {
 	// Accept connections
 	while (true)
 	{
+		if (userCounter >= maxUserCount)
+			continue;
+
 		User* userBuffer = new User{userCounter};
 		userBuffer->sock = accept(Server::listenSocket, &userBuffer->addr, NULL);
 
@@ -263,38 +302,110 @@ void Network::Server::Accept()
 			std::cout << "accept failed: " << WSAGetLastError() << std::endl;
 			return;
 		}
+
 		std::cout << "Connection to " << userBuffer->id << " successful!" << std::endl;
 
-		users.push_back(userBuffer);
-		userCounter++;
+
+		// Send client their id number
+		std::string buf = std::to_string(userBuffer->id);
+
+		int iSendResult = send(userBuffer->sock, buf.c_str(), buf.size(), NULL);
+
+		if (iSendResult == SOCKET_ERROR) 
+		{
+			std::cout << "send failed: " << WSAGetLastError() << std::endl;
+			closesocket(userBuffer->sock);
+			delete userBuffer;
+		}
+		else
+		{
+			users.push_back(userBuffer);
+
+			std::thread t1{&Recieve, userBuffer};
+			threads.push_back(std::move(t1));
+			std::thread t2{&Send, userBuffer};
+			threads.push_back(std::move(t2));
+
+			userCounter++;
+		}
 	}
 }
 
-void Network::Server::Recieve()
+void SystemManager::Network::Server::Recieve(User* user)
+{
+	int iResult;
+	std::string message;
+	char recvbuf[DEFAULT_BUFLEN];
+
+	do
+	{
+		iResult = recv(user->sock, recvbuf, DEFAULT_BUFLEN, NULL);
+
+		if (iResult > 0)
+		{
+			message = recvbuf;
+			message.resize(iResult);
+
+
+			uint16_t id = atoi(message.substr(0, 2).c_str());
+			int32_t keyboardLength = atoi(message.substr(2, 4).c_str());
+			std::string keyboard = message.substr(6, keyboardLength);
+
+			std::cout << id << '\n' << keyboardLength << "\n\n";
+		}
+		else if (iResult == 0)
+			std::cout << "Connection closed..." << std::endl;
+		else
+			std::cout << "recv failed: " << WSAGetLastError() << std::endl;
+	} while (iResult > 0);
+}
+
+void SystemManager::Network::Server::Send(User* user)
 {
 
 }
 
-void Network::Server::Send()
-{
-
-}
-
-Network::User::User(int id) : id{id}, sock{INVALID_SOCKET}
+SystemManager::Network::Server::User::User(uint16_t id) : id{id}, sock{INVALID_SOCKET}
 {
 	ZeroMemory(&addr, (int)sizeof(addr));
 }
 
 
-void Network::Cleanup()
+void SystemManager::Network::Cleanup()
 {
 	for (int i = 0, s = threads.size(); i < s; i++)
 		threads[i].join();
 
 	if (host)
-		for (User* u : users)
+		for (Server::User* u : Server::users)
+		{
 			delete u;
+		}
 
 	WSACleanup();
 	return;
+}
+
+
+
+
+SystemManager::Network::Packet::Packet(std::string buffer)
+{
+	data.fill(0);
+
+	if (!buffer.empty())
+		std::copy(buffer.begin(), buffer.end(), data.begin());
+}
+
+
+void SystemManager::Network::Packet::Send(SOCKET s)
+{
+	int iResult = send(s, reinterpret_cast<const char*>(data.data()), size, NULL);
+
+	if (iResult == SOCKET_ERROR) 
+	{
+		std::cout << "send failed: " << WSAGetLastError();
+		closesocket(s);
+		return;
+	}
 }

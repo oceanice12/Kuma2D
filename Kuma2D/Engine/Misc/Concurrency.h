@@ -16,7 +16,12 @@ inline std::vector<std::vector<Entity>> MultiThread::ParallelSplit(const std::ve
 {
 	std::vector<std::vector<Entity>> subEntities;
 	for (size_t i = 0, size = entities.size(), subSize = static_cast<size_t>(std::ceil(static_cast<double>(size / splits))); i < size; i += subSize)
-		subEntities.push_back( { entities.begin() + i, entities.begin() + std::min<size_t>(i + subSize, size) });
+	{
+		if (subSize == 0)
+			return std::vector<std::vector<Entity>>{entities};
+
+		subEntities.push_back({entities.begin() + i, entities.begin() + std::min<size_t>(i + subSize, size)});
+	}
 
 	return subEntities;
 }

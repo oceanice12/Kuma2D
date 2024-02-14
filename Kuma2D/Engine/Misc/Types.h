@@ -12,7 +12,7 @@
 
 
 using Entity = std::uint32_t;
-constexpr Entity MAX_ENTITIES = UINT32_MAX;
+constexpr Entity MAX_ENTITIES = 1000000;
 
 using Index = std::uint32_t;
 
