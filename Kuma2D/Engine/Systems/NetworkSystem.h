@@ -10,10 +10,17 @@
 #include <bitset>
 #include <array>
 #include <memory>
+#include <type_traits>
+#include <ctime>
+#include <chrono>
+#include <iomanip>
 
 #include <Types.h>
 #include <EntityArray.h>
 #include <Input.h>
+#include <Clock.h>
+#include <EntityManager.h>
+#include <ComponentManager.h>
 
 #pragma comment(lib, "Ws2_32.lib")
 
@@ -32,16 +39,23 @@ namespace SystemManager
 			{
 				User(uint16_t id);
 				const uint16_t id;
+				std::string keyboard;
 				SOCKET sock;
 				sockaddr addr;
 			};
+
+			const std::vector<User*>& GetUserData();
 		}
 
 		class Packet
 		{
 		public:
-			Packet(std::string buffer = {});
+			Packet(std::array<char, DEFAULT_BUFLEN> buf = {});
 			void Send(SOCKET s);
+			void Clear();
+
+			template <typename T>
+			T Get(int index);
 
 			template <typename T>
 			void Add(T d);
@@ -55,6 +69,7 @@ namespace SystemManager
 
 
 		void Init(bool host);
+		bool isHost();
 		void Cleanup();
 	}
 }
@@ -83,6 +98,16 @@ inline void SystemManager::Network::Packet::Add(T d)
 	std::copy(bytes.begin(), bytes.end(), data.begin() + size);
 
 	size += sizeof(T);
+}
+
+template <typename T>
+inline T SystemManager::Network::Packet::Get(int index)
+{
+	T object{};
+	byte* begin_object = reinterpret_cast<byte*>(std::addressof(object));
+	std::copy(data.begin() + index, data.begin() + index + sizeof(T), begin_object);
+
+	return object;
 }
 
 

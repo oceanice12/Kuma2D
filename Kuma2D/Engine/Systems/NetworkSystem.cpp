@@ -28,7 +28,7 @@ namespace SystemManager
 			void Send(User* user);
 			void Accept();
 		}
-		
+
 
 		std::vector<std::thread> threads;
 
@@ -37,6 +37,11 @@ namespace SystemManager
 	}
 }
 
+
+bool SystemManager::Network::isHost()
+{
+	return host;
+}
 
 void SystemManager::Network::Init(bool host)
 {
@@ -158,7 +163,7 @@ void SystemManager::Network::Client::Recieve()
 			if (iResult == 1)
 			{
 				Client::id = atoi(message.c_str());
-				std::cout << "Client ID: " << message;
+				std::cout << "Client ID: " << message << '\n';
 				continue;
 			}
 		}
@@ -181,17 +186,33 @@ void SystemManager::Network::Client::Send()
 	* 
 	*/
 
+	while (Client::id == 0)
+		std::cout << "Awaiting server assigned Client ID\n";
 
 	int32_t keyboardLength = 0;
-	const uint8_t* keyboard = SDL_GetKeyboardState(&keyboardLength);
-
+	const uint8_t* keyboard = nullptr;
 	Packet packet;
-	packet.Add<int16_t>(Client::id);
-	packet.Add<int32_t>(keyboardLength);
-	for (int i = 0, s = keyboardLength; i < s; i++)
-		packet.Add<uint8_t>(keyboard[i]);
 
-	packet.Send(Client::sock);
+	while (true)
+	{
+		// Tick Rate
+		double last = SDL_GetTicks64();
+		Time::Wait(0.05);
+
+		keyboard = SDL_GetKeyboardState(&keyboardLength);
+
+		packet.Add<int16_t>(Client::id);
+		packet.Add<int32_t>(keyboardLength);
+		for (int i = 0, s = keyboardLength; i < s; i++)
+			packet.Add<uint8_t>(keyboard[i]);
+
+		packet.Send(Client::sock);
+		double now = SDL_GetTicks64();
+		std::cout << "Sending packet. Time elapsed: [" << ((now - last) / 1000.) << "s] \n";
+
+
+		packet.Clear();
+	}
 }
 
 void SystemManager::Network::Server::Init()
@@ -303,7 +324,7 @@ void SystemManager::Network::Server::Accept()
 			return;
 		}
 
-		std::cout << "Connection to " << userBuffer->id << " successful!" << std::endl;
+		std::cout << "Connection to " << userBuffer->id << " successful!\n" << std::endl;
 
 
 		// Send client their id number
@@ -334,24 +355,31 @@ void SystemManager::Network::Server::Accept()
 void SystemManager::Network::Server::Recieve(User* user)
 {
 	int iResult;
-	std::string message;
-	char recvbuf[DEFAULT_BUFLEN];
+	std::array<char, DEFAULT_BUFLEN> buf;
 
 	do
 	{
-		iResult = recv(user->sock, recvbuf, DEFAULT_BUFLEN, NULL);
+		// Tick Rate
+		double last = SDL_GetTicks64();
+
+		buf.fill(0);
+
+		iResult = recv(user->sock, buf.data(), DEFAULT_BUFLEN, NULL);
+
+		Packet packet{buf};
 
 		if (iResult > 0)
 		{
-			message = recvbuf;
-			message.resize(iResult);
+			uint16_t id = packet.Get<uint16_t>(0);
+			int32_t keyboardLength = packet.Get<int32_t>(2);
+			std::string keyboard{};
+			for (int i = 0; i < keyboardLength; i++)
+				keyboard.push_back(packet.Get<char>(i + 6));
 
+			user->keyboard = keyboard;
 
-			uint16_t id = atoi(message.substr(0, 2).c_str());
-			int32_t keyboardLength = atoi(message.substr(2, 4).c_str());
-			std::string keyboard = message.substr(6, keyboardLength);
-
-			std::cout << id << '\n' << keyboardLength << "\n\n";
+			double now = SDL_GetTicks64();
+			std::cout << "Client " << id << ": packet recieved. Time elapsed: [" << ((now - last) / 1000.) << "s] \n";
 		}
 		else if (iResult == 0)
 			std::cout << "Connection closed..." << std::endl;
@@ -362,6 +390,55 @@ void SystemManager::Network::Server::Recieve(User* user)
 
 void SystemManager::Network::Server::Send(User* user)
 {
+	/*
+	// Size: 288 bits/36 bytes
+	uint32_t entitiesSize;
+	uint32_t idQSize;
+	uint32_t sigsSize;
+	uint64_t entityIndexSize;
+	uint64_t entityTypeSize;
+	uint64_t typeArraySize;
+
+	// Body
+	std::vector<Entity> entities;
+	std::queue<Entity> idQueue;
+	std::vector<Signature> signatures;
+	std::unordered_map<Entity, Index> entityToIndex;
+	std::unordered_map<Entity, Type> entityToType;
+	std::unordered_map<Type, EntityArray> typeToArray;
+	*/
+
+	Packet packet;
+
+	while (true)
+	{
+		// Tick Rate
+		double last = SDL_GetTicks64();
+		Time::Wait(0.05);
+
+		EntityManager::EntityGameState entityState = EntityManager::GetGameState();
+		std::array<Entity, MAX_ENTITIES> entities;
+		std::copy(entityState.entities->begin(), entityState.entities->end(), entities);
+
+
+		ComponentManager::GetArray<Transform>();
+		ComponentManager::GetArray<Sprite>();
+		ComponentManager::GetArray<Rigidbody>();
+		ComponentManager::GetArray<CircleCollider>();
+		ComponentManager::GetArray<BoxCollider>();
+		ComponentManager::GetArray<CircleTrigger>();
+		ComponentManager::GetArray<BoxTrigger>();
+		ComponentManager::GetArray<Text>();
+		
+
+		//packet.Send(user->sock);
+		double now = SDL_GetTicks64();
+		//std::cout << "Sending packet to Client: " << user->id << "Time elapsed: [" << ((now - last) / 1000.) << "s] \n";
+
+
+		packet.Clear();
+	}
+
 
 }
 
@@ -389,18 +466,18 @@ void SystemManager::Network::Cleanup()
 
 
 
-SystemManager::Network::Packet::Packet(std::string buffer)
+SystemManager::Network::Packet::Packet(std::array<char, DEFAULT_BUFLEN> buf)
 {
-	data.fill(0);
+	std::copy(buf.begin(), buf.end(), data.begin());
 
-	if (!buffer.empty())
-		std::copy(buffer.begin(), buffer.end(), data.begin());
+	if (buf[0] != 0 || buf[1] != 0)
+		size = DEFAULT_BUFLEN;
 }
 
 
 void SystemManager::Network::Packet::Send(SOCKET s)
 {
-	int iResult = send(s, reinterpret_cast<const char*>(data.data()), size, NULL);
+	int iResult = send(s, reinterpret_cast<const char*>(data.data()), DEFAULT_BUFLEN, NULL);
 
 	if (iResult == SOCKET_ERROR) 
 	{
@@ -408,4 +485,15 @@ void SystemManager::Network::Packet::Send(SOCKET s)
 		closesocket(s);
 		return;
 	}
+}
+
+const std::vector<SystemManager::Network::Server::User*>& SystemManager::Network::Server::GetUserData()
+{
+	return users;
+}
+
+void SystemManager::Network::Packet::Clear()
+{
+	data.fill(0);
+	size = 0;
 }

@@ -26,7 +26,7 @@ void Time::Wait(double seconds)
 		waitTime += (waitNow - waitLast) / 1000.;
 	}
 
-	now += static_cast<Uint64>(seconds * 1000);
+	//now += static_cast<Uint64>(seconds * 1000);
 }
 
 

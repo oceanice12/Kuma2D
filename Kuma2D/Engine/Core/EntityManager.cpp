@@ -102,3 +102,16 @@ Type EntityManager::GetType(Entity entity)
 const Signature EntityManager::GetSignature(Entity entity) { return signatures[entityToIndex[entity]]; }
 void EntityManager::SetSignature(Entity entity, Signature signature) { signatures[entityToIndex[entity]] = signature; }
 const std::vector<Entity>* EntityManager::GetEntities() { return &entities; }
+
+const EntityManager::EntityGameState EntityManager::GetGameState()
+{
+	EntityGameState state;
+	state.entities = &entities;
+	state.idQueue = &idQueue;
+	state.signatures = &signatures;
+	state.entityToIndex = &entityToIndex;
+	state.entityToType = &entityToType;
+	state.typeToArray = &typeToArray;
+
+	return state;
+}

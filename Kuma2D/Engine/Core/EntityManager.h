@@ -22,4 +22,16 @@ namespace EntityManager
 
 	const std::vector<Entity>* GetArray(Type type);
 	const std::vector<Entity>* GetEntities();
+
+	struct EntityGameState
+	{
+		const std::vector<Entity>* entities;
+		const std::queue<Entity>* idQueue;
+		const std::vector<Signature>* signatures;
+		const std::unordered_map<Entity, Index>* entityToIndex;
+		const std::unordered_map<Entity, Type>* entityToType;
+		const std::unordered_map<Type, EntityArray>* typeToArray;
+	};
+
+	const EntityGameState GetGameState();
 }
