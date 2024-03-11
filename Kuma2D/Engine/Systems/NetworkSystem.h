@@ -31,7 +31,8 @@ namespace SystemManager
 	namespace Network
 	{
 		inline const char* DEFAULT_PORT{"2800"};
-		constexpr int DEFAULT_BUFLEN{1024};
+		constexpr int DEFAULT_BUFLEN{1000000};
+		using Buffer = std::array<char, DEFAULT_BUFLEN>;
 
 		namespace Server
 		{
@@ -50,8 +51,9 @@ namespace SystemManager
 		class Packet
 		{
 		public:
-			Packet(std::array<char, DEFAULT_BUFLEN> buf = {});
-			void Send(SOCKET s);
+			Packet(Buffer* buf = nullptr);
+			size_t Send(SOCKET s);
+			size_t Recv(SOCKET s);
 			void Clear();
 
 			template <typename T>

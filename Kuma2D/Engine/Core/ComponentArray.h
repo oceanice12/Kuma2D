@@ -10,6 +10,14 @@ public:
 	virtual ~IComponentArray() = default;
 };
 
+template<typename T>
+struct ComponentArrayData
+{
+	const std::vector<T>* components;
+	const std::unordered_map<Entity, Index>* entityToIndex;
+	const std::unordered_map<Index, Entity>* indexToEntity;
+};
+
 
 template<typename T>
 class ComponentArray : public IComponentArray
@@ -22,6 +30,8 @@ public:
 
 	T* GetComponent(Entity entity);
 	T* operator [](Entity entity);
+
+	const ComponentArrayData<T> GetData();
 private:
 	std::vector<T> components;
 	std::unordered_map<Entity, Index> entityToIndex;
@@ -29,6 +39,16 @@ private:
 };
 
 
+
+template<typename T>
+inline const ComponentArrayData<T> ComponentArray<T>::GetData()
+{
+	ComponentArrayData<T> data;
+	data.components = &components;
+	data.entityToIndex = &entityToIndex;
+
+	return data;
+}
 
 
 template<typename T>

@@ -148,7 +148,7 @@ void SystemManager::Network::Client::Connect()
 
 void SystemManager::Network::Client::Recieve()
 {
-	char recvbuf[DEFAULT_BUFLEN];
+	char* recvbuf = new char[DEFAULT_BUFLEN];
 	int iResult;
 	std::string message;
 
@@ -164,14 +164,25 @@ void SystemManager::Network::Client::Recieve()
 			{
 				Client::id = atoi(message.c_str());
 				std::cout << "Client ID: " << message << '\n';
-				continue;
+			}
+			else
+			{
+				std::cout << "Bytes Recieved: " << iResult << '\n';
 			}
 		}
 		else if (iResult == 0)
+		{
 			std::cout << "Connection closed..." << std::endl;
+			Client::sock = INVALID_SOCKET;
+		}
 		else
+		{
 			std::cout << "recv failed: " << WSAGetLastError() << std::endl;
+			Client::sock = INVALID_SOCKET;
+		}
 	} while (iResult > 0);
+
+	delete[] recvbuf;
 }
 
 void SystemManager::Network::Client::Send()
@@ -191,9 +202,9 @@ void SystemManager::Network::Client::Send()
 
 	int32_t keyboardLength = 0;
 	const uint8_t* keyboard = nullptr;
-	Packet packet;
+	Packet* packet = new Packet;
 
-	while (true)
+	while (Client::sock != INVALID_SOCKET)
 	{
 		// Tick Rate
 		double last = SDL_GetTicks64();
@@ -201,18 +212,20 @@ void SystemManager::Network::Client::Send()
 
 		keyboard = SDL_GetKeyboardState(&keyboardLength);
 
-		packet.Add<int16_t>(Client::id);
-		packet.Add<int32_t>(keyboardLength);
+		packet->Add<int16_t>(Client::id);
+		packet->Add<int32_t>(keyboardLength);
 		for (int i = 0, s = keyboardLength; i < s; i++)
-			packet.Add<uint8_t>(keyboard[i]);
+			packet->Add<uint8_t>(keyboard[i]);
 
-		packet.Send(Client::sock);
+		packet->Send(Client::sock);
 		double now = SDL_GetTicks64();
 		std::cout << "Sending packet. Time elapsed: [" << ((now - last) / 1000.) << "s] \n";
 
 
-		packet.Clear();
+		packet->Clear();
 	}
+
+	delete packet;
 }
 
 void SystemManager::Network::Server::Init()
@@ -355,26 +368,22 @@ void SystemManager::Network::Server::Accept()
 void SystemManager::Network::Server::Recieve(User* user)
 {
 	int iResult;
-	std::array<char, DEFAULT_BUFLEN> buf;
+	Packet* packet = new Packet;
 
 	do
 	{
 		// Tick Rate
 		double last = SDL_GetTicks64();
 
-		buf.fill(0);
-
-		iResult = recv(user->sock, buf.data(), DEFAULT_BUFLEN, NULL);
-
-		Packet packet{buf};
+		iResult = packet->Recv(user->sock);
 
 		if (iResult > 0)
 		{
-			uint16_t id = packet.Get<uint16_t>(0);
-			int32_t keyboardLength = packet.Get<int32_t>(2);
+			uint16_t id = packet->Get<uint16_t>(0);
+			int32_t keyboardLength = packet->Get<int32_t>(2);
 			std::string keyboard{};
 			for (int i = 0; i < keyboardLength; i++)
-				keyboard.push_back(packet.Get<char>(i + 6));
+				keyboard.push_back(packet->Get<char>(i + 6));
 
 			user->keyboard = keyboard;
 
@@ -386,29 +395,25 @@ void SystemManager::Network::Server::Recieve(User* user)
 		else
 			std::cout << "recv failed: " << WSAGetLastError() << std::endl;
 	} while (iResult > 0);
+
+	delete packet;
 }
 
 void SystemManager::Network::Server::Send(User* user)
 {
 	/*
-	// Size: 288 bits/36 bytes
 	uint32_t entitiesSize;
-	uint32_t idQSize;
 	uint32_t sigsSize;
-	uint64_t entityIndexSize;
-	uint64_t entityTypeSize;
-	uint64_t typeArraySize;
+	uint32_t entityIndexSize;
 
 	// Body
 	std::vector<Entity> entities;
-	std::queue<Entity> idQueue;
 	std::vector<Signature> signatures;
 	std::unordered_map<Entity, Index> entityToIndex;
-	std::unordered_map<Entity, Type> entityToType;
-	std::unordered_map<Type, EntityArray> typeToArray;
 	*/
 
-	Packet packet;
+	Packet* packet = new Packet;
+	DEFAULT_BUFLEN;
 
 	while (true)
 	{
@@ -417,26 +422,104 @@ void SystemManager::Network::Server::Send(User* user)
 		Time::Wait(0.05);
 
 		EntityManager::EntityGameState entityState = EntityManager::GetGameState();
-		std::array<Entity, MAX_ENTITIES> entities;
-		std::copy(entityState.entities->begin(), entityState.entities->end(), entities);
+		ComponentArrayData<Transform> tfData = ComponentManager::GetArray<Transform>().GetData();
+		ComponentArrayData<Sprite> spData = ComponentManager::GetArray<Sprite>().GetData();
+		ComponentArrayData<Rigidbody> rbData = ComponentManager::GetArray<Rigidbody>().GetData();
+		ComponentArrayData<CircleCollider> ccData = ComponentManager::GetArray<CircleCollider>().GetData();
+		ComponentArrayData<BoxCollider> bcData = ComponentManager::GetArray<BoxCollider>().GetData();
+		ComponentArrayData<CircleTrigger> ctData = ComponentManager::GetArray<CircleTrigger>().GetData();
+		ComponentArrayData<BoxTrigger> btData = ComponentManager::GetArray<BoxTrigger>().GetData();
+		ComponentArrayData<Text> txtData = ComponentManager::GetArray<Text>().GetData();
 
+		packet->Add<Entity>(entityState.entities->size());
+		packet->Add<Entity>(entityState.signatures->size());
+		packet->Add<Entity>(tfData.components->size());
+		packet->Add<Entity>(spData.components->size());
+		packet->Add<Entity>(rbData.components->size());
+		packet->Add<Entity>(ccData.components->size());
+		packet->Add<Entity>(bcData.components->size());
+		packet->Add<Entity>(ctData.components->size());
+		packet->Add<Entity>(btData.components->size());
+		packet->Add<Entity>(txtData.components->size());
 
-		ComponentManager::GetArray<Transform>();
-		ComponentManager::GetArray<Sprite>();
-		ComponentManager::GetArray<Rigidbody>();
-		ComponentManager::GetArray<CircleCollider>();
-		ComponentManager::GetArray<BoxCollider>();
-		ComponentManager::GetArray<CircleTrigger>();
-		ComponentManager::GetArray<BoxTrigger>();
-		ComponentManager::GetArray<Text>();
+		
+		for (auto& e : *entityState.entities)
+			packet->Add<Entity>(e);
+
+		for (auto& s : *entityState.signatures)
+			packet->Add<Signature>(s);
+
+		for (auto& c : *tfData.components)
+			packet->Add<Transform>(c);
+		for (auto& c : *tfData.entityToIndex)
+		{
+			packet->Add<Entity>(c.first);
+			packet->Add<Index>(c.second);
+		}
+
+		for (auto& c : *spData.components)
+			packet->Add<Sprite>(c);
+		for (auto& c : *spData.entityToIndex)
+		{
+			packet->Add<Entity>(c.first);
+			packet->Add<Index>(c.second);
+		}
+
+		for (auto& c : *rbData.components)
+			packet->Add<Rigidbody>(c);
+		for (auto& c : *rbData.entityToIndex)
+		{
+			packet->Add<Entity>(c.first);
+			packet->Add<Index>(c.second);
+		}
+
+		for (auto& c : *ccData.components)
+			packet->Add<CircleCollider>(c);
+		for (auto& c : *ccData.entityToIndex)
+		{
+			packet->Add<Entity>(c.first);
+			packet->Add<Index>(c.second);
+		}
+
+		for (auto& c : *bcData.components)
+			packet->Add<BoxCollider>(c);
+		for (auto& c : *bcData.entityToIndex)
+		{
+			packet->Add<Entity>(c.first);
+			packet->Add<Index>(c.second);
+		}
+
+		for (auto& c : *ctData.components)
+			packet->Add<CircleTrigger>(c);
+		for (auto& c : *ctData.entityToIndex)
+		{
+			packet->Add<Entity>(c.first);
+			packet->Add<Index>(c.second);
+		}
+
+		for (auto& c : *btData.components)
+			packet->Add<BoxTrigger>(c);
+		for (auto& c : *btData.entityToIndex)
+		{
+			packet->Add<Entity>(c.first);
+			packet->Add<Index>(c.second);
+		}
+
+		for (auto& c : *txtData.components)
+			packet->Add<Text>(c);
+		for (auto& c : *txtData.entityToIndex)
+		{
+			packet->Add<Entity>(c.first);
+			packet->Add<Index>(c.second);
+		}
 		
 
-		//packet.Send(user->sock);
+		size_t result = packet->Send(user->sock);
 		double now = SDL_GetTicks64();
-		//std::cout << "Sending packet to Client: " << user->id << "Time elapsed: [" << ((now - last) / 1000.) << "s] \n";
+		std::cout << "Sending packet to Client: " << user->id << "Size: " << result << " bytes " << "Time elapsed: [" << ((now - last) / 1000.) << "s] \n";
 
 
-		packet.Clear();
+		packet->Clear();
 	}
 
 
@@ -466,16 +549,22 @@ void SystemManager::Network::Cleanup()
 
 
 
-SystemManager::Network::Packet::Packet(std::array<char, DEFAULT_BUFLEN> buf)
+SystemManager::Network::Packet::Packet(Buffer* buf)
 {
-	std::copy(buf.begin(), buf.end(), data.begin());
+	if (buf == nullptr)
+	{
+		data.fill(0);
+		return;
+	}
 
-	if (buf[0] != 0 || buf[1] != 0)
+	std::copy(buf->begin(), buf->end(), data.begin());
+
+	if ((*buf)[0] != 0 || (*buf)[1] != 0)
 		size = DEFAULT_BUFLEN;
 }
 
 
-void SystemManager::Network::Packet::Send(SOCKET s)
+size_t SystemManager::Network::Packet::Send(SOCKET s)
 {
 	int iResult = send(s, reinterpret_cast<const char*>(data.data()), DEFAULT_BUFLEN, NULL);
 
@@ -483,8 +572,22 @@ void SystemManager::Network::Packet::Send(SOCKET s)
 	{
 		std::cout << "send failed: " << WSAGetLastError();
 		closesocket(s);
-		return;
 	}
+
+	return size;
+}
+
+size_t SystemManager::Network::Packet::Recv(SOCKET s)
+{
+	int iResult = recv(s, reinterpret_cast<char*>(data.data()), DEFAULT_BUFLEN, NULL);
+
+	if (iResult == SOCKET_ERROR)
+	{
+		std::cout << "recv failed: " << WSAGetLastError();
+		closesocket(s);
+	}
+
+	return iResult;
 }
 
 const std::vector<SystemManager::Network::Server::User*>& SystemManager::Network::Server::GetUserData()
