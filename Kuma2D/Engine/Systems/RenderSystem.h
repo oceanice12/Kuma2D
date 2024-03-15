@@ -6,6 +6,7 @@
 #include <vector>
 #include <map>
 #include <filesystem>
+#include <mutex>
 
 #include <ComponentArray.h>
 #include <ComponentsPlus.h>
@@ -30,5 +31,6 @@ namespace SystemManager
 		extern std::vector<Entity> entities;
 		extern std::unordered_map<Entity, Index> entityToIndex;
 		extern std::vector<Signature> systemSignatures;
+		extern std::mutex mutex;
 	}
 }

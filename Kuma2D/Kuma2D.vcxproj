@@ -83,12 +83,12 @@
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
     <LinkIncremental>true</LinkIncremental>
-    <IncludePath>C:\Users\abdul\source\repos\Kuma2D\Kuma2D\Engine\Peripherals;C:\Dev\SDL2_ttf\include;C:\Users\abdul\source\repos\Kuma2D\Kuma2D\Engine\Core;C:\Users\abdul\source\repos\Kuma2D\Kuma2D\Engine\Misc;C:\Users\abdul\source\repos\Kuma2D\Kuma2D\Engine\Systems;C:\Users\abdul\source\repos\Kuma2D\Kuma2D\Engine\Math;C:\Users\abdul\source\repos\Kuma2D\Kuma2D\Game;C:\Users\abdul\source\repos\Kuma2D\Kuma2D\Engine;C:\Users\abdul\source\repos\Kuma2D\Kuma2D\Engine\Components;C:\Dev\SDL2_mixer\include;C:\Dev\SDL2_image-2.0.5\include;C:\Dev\SDL2\include;$(IncludePath)</IncludePath>
+    <IncludePath>C:\Users\abdul\source\repos\Kuma2D\Kuma2D\Engine\Systems\Network;C:\Users\abdul\source\repos\Kuma2D\Kuma2D\Engine\Peripherals;C:\Dev\SDL2_ttf\include;C:\Users\abdul\source\repos\Kuma2D\Kuma2D\Engine\Core;C:\Users\abdul\source\repos\Kuma2D\Kuma2D\Engine\Misc;C:\Users\abdul\source\repos\Kuma2D\Kuma2D\Engine\Systems;C:\Users\abdul\source\repos\Kuma2D\Kuma2D\Engine\Math;C:\Users\abdul\source\repos\Kuma2D\Kuma2D\Game;C:\Users\abdul\source\repos\Kuma2D\Kuma2D\Engine;C:\Users\abdul\source\repos\Kuma2D\Kuma2D\Engine\Components;C:\Dev\SDL2_mixer\include;C:\Dev\SDL2_image-2.0.5\include;C:\Dev\SDL2\include;$(IncludePath)</IncludePath>
     <LibraryPath>C:\Dev\SDL2_ttf\lib\x64;C:\Dev\SDL2_mixer\lib\x64;C:\Dev\SDL2_image-2.0.5\lib\x64;C:\Dev\SDL2\lib\x64;$(LibraryPath)</LibraryPath>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
     <LinkIncremental>false</LinkIncremental>
-    <IncludePath>C:\Users\abdul\source\repos\Kuma2D\Kuma2D\Engine\Peripherals;C:\Dev\SDL2_ttf\include;C:\Users\abdul\source\repos\Kuma2D\Kuma2D\Engine\Core;C:\Users\abdul\source\repos\Kuma2D\Kuma2D\Engine\Misc;C:\Users\abdul\source\repos\Kuma2D\Kuma2D\Engine\Systems;C:\Users\abdul\source\repos\Kuma2D\Kuma2D\Engine\Math;C:\Users\abdul\source\repos\Kuma2D\Kuma2D\Game;C:\Users\abdul\source\repos\Kuma2D\Kuma2D\Engine;C:\Users\abdul\source\repos\Kuma2D\Kuma2D\Engine\Components;C:\Dev\SDL2_mixer\include;C:\Dev\SDL2_image-2.0.5\include;C:\Dev\SDL2\include;$(IncludePath)</IncludePath>
+    <IncludePath>C:\Users\abdul\source\repos\Kuma2D\Kuma2D\Engine\Systems\Network;C:\Users\abdul\source\repos\Kuma2D\Kuma2D\Engine\Peripherals;C:\Dev\SDL2_ttf\include;C:\Users\abdul\source\repos\Kuma2D\Kuma2D\Engine\Core;C:\Users\abdul\source\repos\Kuma2D\Kuma2D\Engine\Misc;C:\Users\abdul\source\repos\Kuma2D\Kuma2D\Engine\Systems;C:\Users\abdul\source\repos\Kuma2D\Kuma2D\Engine\Math;C:\Users\abdul\source\repos\Kuma2D\Kuma2D\Game;C:\Users\abdul\source\repos\Kuma2D\Kuma2D\Engine;C:\Users\abdul\source\repos\Kuma2D\Kuma2D\Engine\Components;C:\Dev\SDL2_mixer\include;C:\Dev\SDL2_image-2.0.5\include;C:\Dev\SDL2\include;$(IncludePath)</IncludePath>
     <LibraryPath>C:\Dev\SDL2_ttf\lib\x64;C:\Dev\SDL2_mixer\lib\x64;C:\Dev\SDL2_image-2.0.5\lib\x64;C:\Dev\SDL2\lib\x64;$(LibraryPath)</LibraryPath>
   </PropertyGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
@@ -165,13 +165,15 @@
     <ClCompile Include="Engine\Systems\AudioSystem.cpp" />
     <ClCompile Include="Engine\Core\ComponentManager.cpp" />
     <ClCompile Include="Engine\Core\EntityManager.cpp" />
-    <ClCompile Include="Engine\Systems\NetworkSystem.cpp" />
+    <ClCompile Include="Engine\Systems\Network\ClientSystem.cpp" />
+    <ClCompile Include="Engine\Systems\Network\NetworkSystem.cpp" />
     <ClCompile Include="Engine\Systems\PhysicsSystem.cpp" />
     <ClCompile Include="Engine\Core\SystemManager.cpp" />
     <ClCompile Include="Engine\Peripherals\Input.cpp" />
     <ClCompile Include="Engine\Core\EntityArray.cpp" />
     <ClCompile Include="Engine\Core\Kuma2D.cpp" />
     <ClCompile Include="Engine\Systems\RenderSystem.cpp" />
+    <ClCompile Include="Engine\Systems\Network\ServerSystem.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="Engine\Components\Text.h" />
@@ -187,7 +189,8 @@
     <ClInclude Include="Engine\Core\ComponentManager.h" />
     <ClInclude Include="Engine\Core\EntityManager.h" />
     <ClInclude Include="Engine\Misc\Macros.h" />
-    <ClInclude Include="Engine\Systems\NetworkSystem.h" />
+    <ClInclude Include="Engine\Systems\Network\ClientSystem.h" />
+    <ClInclude Include="Engine\Systems\Network\NetworkSystem.h" />
     <ClInclude Include="Engine\Systems\PhysicsSystem.h" />
     <ClInclude Include="Engine\Core\SystemManager.h" />
     <ClInclude Include="Engine\Peripherals\Clock.h" />
@@ -199,6 +202,7 @@
     <ClInclude Include="Engine\Misc\Types.h" />
     <ClInclude Include="Engine\Misc\Settings.h" />
     <ClInclude Include="Engine\Core\Kuma2D.h" />
+    <ClInclude Include="Engine\Systems\Network\ServerSystem.h" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">

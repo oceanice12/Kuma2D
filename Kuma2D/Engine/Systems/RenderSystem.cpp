@@ -3,6 +3,7 @@
 Transform SystemManager::Render::camera;
 std::vector<Entity> SystemManager::Render::entities;
 std::unordered_map<Entity, Index> SystemManager::Render::entityToIndex;
+std::mutex SystemManager::Render::mutex;
 
 std::vector<Signature> SystemManager::Render::systemSignatures =
 {
@@ -58,6 +59,7 @@ void SystemManager::Render::Update(ComponentArray<Transform>& transforms, Compon
 	if (SDL_RenderClear(renderer) < 0)
 		std::cout << "WARNING! Failed to clear renderer. " << SDL_GetError() << std::endl;
 
+	mutex.lock();
 
 	std::map<int, std::vector<Entity>> layerToEntities;
 	for (Entity entity : entities)
@@ -117,8 +119,9 @@ void SystemManager::Render::Update(ComponentArray<Transform>& transforms, Compon
 	}
 
 	SDL_RenderPresent(renderer);
-}
 
+	mutex.unlock();
+}
 
 void SystemManager::Render::LoadSprites(const char* path)
 {

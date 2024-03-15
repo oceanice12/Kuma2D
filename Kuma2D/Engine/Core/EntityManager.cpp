@@ -103,15 +103,17 @@ const Signature EntityManager::GetSignature(Entity entity) { return signatures[e
 void EntityManager::SetSignature(Entity entity, Signature signature) { signatures[entityToIndex[entity]] = signature; }
 const std::vector<Entity>* EntityManager::GetEntities() { return &entities; }
 
-const EntityManager::EntityGameState EntityManager::GetGameState()
+const EntityManager::Network::EntityGameState EntityManager::Network::GetGameState()
 {
-	EntityGameState state;
-	state.entities = &entities;
-	state.idQueue = &idQueue;
-	state.signatures = &signatures;
-	state.entityToIndex = &entityToIndex;
-	state.entityToType = &entityToType;
-	state.typeToArray = &typeToArray;
+	EntityGameState state{&entities, &signatures, &entityToIndex};
 
 	return state;
+}
+
+
+void EntityManager::Network::SetGameState(EntityGameState state)
+{
+	entities = *state.entities;
+	signatures = *state.signatures;
+	entityToIndex = *state.entityToIndex;
 }

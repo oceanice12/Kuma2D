@@ -48,7 +48,13 @@
     <ClCompile Include="Engine\Math\QuadTree.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="Engine\Systems\NetworkSystem.cpp">
+    <ClCompile Include="Engine\Systems\Network\NetworkSystem.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="Engine\Systems\Network\ServerSystem.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="Engine\Systems\Network\ClientSystem.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
   </ItemGroup>
@@ -125,7 +131,13 @@
     <ClInclude Include="Engine\Math\QuadTree.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="Engine\Systems\NetworkSystem.h">
+    <ClInclude Include="Engine\Systems\Network\NetworkSystem.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="Engine\Systems\Network\ServerSystem.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="Engine\Systems\Network\ClientSystem.h">
       <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>

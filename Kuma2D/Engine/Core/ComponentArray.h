@@ -32,6 +32,7 @@ public:
 	T* operator [](Entity entity);
 
 	const ComponentArrayData<T> GetData();
+	void SetData(ComponentArrayData<T> data);
 private:
 	std::vector<T> components;
 	std::unordered_map<Entity, Index> entityToIndex;
@@ -48,6 +49,13 @@ inline const ComponentArrayData<T> ComponentArray<T>::GetData()
 	data.entityToIndex = &entityToIndex;
 
 	return data;
+}
+
+template<typename T>
+inline void ComponentArray<T>::SetData(ComponentArrayData<T> data)
+{
+	this->components = *data.components;
+	this->entityToIndex = *data.entityToIndex;
 }
 
 
